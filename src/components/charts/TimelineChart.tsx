@@ -59,7 +59,7 @@ const CustomTooltip = ({
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
   if (!d || d.duration === 0) return null;
-  const isActive = d.endMs > Date.now();
+  const isActive = d.status === "ACTIVE";
   return (
     <div className="bg-[#1e2a3a] border border-slate-700 rounded-xl px-4 py-3 text-sm shadow-xl">
       <div className="flex items-center gap-2 mb-1">
