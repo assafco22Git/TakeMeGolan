@@ -120,7 +120,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
         </div>
 
         <div>
-          <label className={labelClass}>Current Hometown</label>
+          <label className={labelClass}>Current City</label>
           <input
             type="text"
             value={form.hometown}
