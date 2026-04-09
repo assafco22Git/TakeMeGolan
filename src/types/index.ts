@@ -11,6 +11,9 @@ export interface Girl {
   ranking: number;
   notes: string | null;
   status: Status;
+  matchedDate: string | null;
+  matchedApp: string | null;
+  firstWhatsapp: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,4 +57,4 @@ export interface MonthlyStats {
   topGirl: string | null;
 }
 
-export type ChartGroupBy = "origin" | "occupation" | "status";
+export type ChartGroupBy = "origin" | "occupation" | "status" | "matchedApp";

@@ -19,6 +19,9 @@ const createGirlSchema = z.object({
   ranking: z.number().min(0).max(10),
   notes: z.string().max(2000).optional().nullable(),
   status: z.enum(["ACTIVE", "PAST"]).default("ACTIVE"),
+  matchedDate: z.string().datetime().optional().nullable(),
+  matchedApp: z.string().max(50).optional().nullable(),
+  firstWhatsapp: z.string().datetime().optional().nullable(),
 });
 
 export async function GET() {
@@ -44,6 +47,8 @@ export async function POST(req: NextRequest) {
         ...parsed.data,
         startDate: new Date(parsed.data.startDate),
         endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : null,
+        matchedDate: parsed.data.matchedDate ? new Date(parsed.data.matchedDate) : null,
+        firstWhatsapp: parsed.data.firstWhatsapp ? new Date(parsed.data.firstWhatsapp) : null,
       },
     });
     return NextResponse.json(girl, { status: 201 });

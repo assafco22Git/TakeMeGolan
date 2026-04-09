@@ -60,6 +60,7 @@ export default function CustomChart({ initialData, initialGroupBy }: Props) {
     { value: "origin", label: "By Origin" },
     { value: "occupation", label: "By Occupation" },
     { value: "status", label: "By Status" },
+    { value: "matchedApp", label: "By App" },
   ];
 
   return (
@@ -73,7 +74,7 @@ export default function CustomChart({ initialData, initialGroupBy }: Props) {
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
               groupBy === opt.value
                 ? "bg-blue-600 text-white"
-                : "bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700"
             }`}
           >
             {opt.label}

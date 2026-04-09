@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   const view = searchParams.get("view") || "all";
   const groupBy = (searchParams.get("groupBy") || "origin") as ChartGroupBy;
 
-  interface GirlRow { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date; endDate: Date | null; ranking: number; status: string; }
+  interface GirlRow { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date; endDate: Date | null; ranking: number; status: string; matchedApp: string | null; }
   const girls = (await prisma.girl.findMany({ orderBy: { startDate: "asc" } })) as GirlRow[];
 
   const timeline: TimelineEntry[] = girls.map((g) => ({
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
 
   const distMap = new Map<string, { count: number; total: number }>();
   for (const g of girls) {
-    const key = groupBy === "status" ? g.status : groupBy === "occupation" ? (g.occupation || "Unknown") : (g.origin || "Unknown");
+    const key = groupBy === "status" ? g.status : groupBy === "occupation" ? (g.occupation || "Unknown") : groupBy === "matchedApp" ? (g.matchedApp || "Unknown") : (g.origin || "Unknown");
     const e = distMap.get(key) ?? { count: 0, total: 0 };
     distMap.set(key, { count: e.count + 1, total: e.total + g.ranking });
   }

@@ -22,9 +22,12 @@ model Girl {
   occupation String?
   startDate  DateTime
   endDate    DateTime?
-  ranking    Float
-  notes      String?
-  status     Status    @default(ACTIVE)
+  ranking       Float
+  notes         String?
+  status        Status    @default(ACTIVE)
+  matchedDate   DateTime?
+  matchedApp    String?
+  firstWhatsapp DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 }

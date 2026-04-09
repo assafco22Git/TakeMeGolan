@@ -26,6 +26,9 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
     endDate: initial?.endDate ? initial.endDate.slice(0, 10) : "",
     ranking: initial?.ranking?.toString() || "5",
     notes: initial?.notes || "",
+    matchedDate: initial?.matchedDate ? initial.matchedDate.slice(0, 10) : "",
+    matchedApp: initial?.matchedApp || "",
+    firstWhatsapp: initial?.firstWhatsapp ? initial.firstWhatsapp.slice(0, 10) : "",
   });
 
   function set(field: string, value: string) {
@@ -46,6 +49,9 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
       ranking: parseFloat(form.ranking),
       notes: form.notes || null,
       status: ongoing ? "ACTIVE" : "PAST",
+      matchedDate: form.matchedDate ? new Date(form.matchedDate + "T12:00:00Z").toISOString() : null,
+      matchedApp: form.matchedApp || null,
+      firstWhatsapp: form.firstWhatsapp ? new Date(form.firstWhatsapp + "T12:00:00Z").toISOString() : null,
     };
 
     try {
@@ -153,6 +159,40 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
               className={inputClass}
             />
           )}
+        </div>
+        <div>
+          <label className={labelClass}>Matched Date</label>
+          <input
+            type="date"
+            value={form.matchedDate}
+            onChange={(e) => set("matchedDate", e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
+        <div>
+          <label className={labelClass}>Matched App</label>
+          <select
+            value={form.matchedApp}
+            onChange={(e) => set("matchedApp", e.target.value)}
+            className={inputClass}
+          >
+            <option value="">— select app —</option>
+            <option value="Hinge">Hinge</option>
+            <option value="Tinder">Tinder</option>
+            <option value="OKCupid">OKCupid</option>
+            <option value="Bumble">Bumble</option>
+          </select>
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className={labelClass}>First WhatsApp Conversation</label>
+          <input
+            type="date"
+            value={form.firstWhatsapp}
+            onChange={(e) => set("firstWhatsapp", e.target.value)}
+            className={inputClass}
+          />
         </div>
       </div>
 

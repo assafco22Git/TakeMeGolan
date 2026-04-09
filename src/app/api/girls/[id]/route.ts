@@ -19,6 +19,9 @@ const updateGirlSchema = z.object({
   ranking: z.number().min(0).max(10).optional(),
   notes: z.string().max(2000).optional().nullable(),
   status: z.enum(["ACTIVE", "PAST"]).optional(),
+  matchedDate: z.string().datetime().optional().nullable(),
+  matchedApp: z.string().max(50).optional().nullable(),
+  firstWhatsapp: z.string().datetime().optional().nullable(),
 });
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -46,6 +49,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const data: Record<string, unknown> = { ...parsed.data };
   if (parsed.data.startDate) data.startDate = new Date(parsed.data.startDate);
   if (parsed.data.endDate !== undefined) data.endDate = parsed.data.endDate ? new Date(parsed.data.endDate) : null;
+  if (parsed.data.matchedDate !== undefined) data.matchedDate = parsed.data.matchedDate ? new Date(parsed.data.matchedDate) : null;
+  if (parsed.data.firstWhatsapp !== undefined) data.firstWhatsapp = parsed.data.firstWhatsapp ? new Date(parsed.data.firstWhatsapp) : null;
 
   try {
     const girl = await prisma.girl.update({ where: { id }, data });
