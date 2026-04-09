@@ -22,24 +22,48 @@ const RANGE_MS: Record<RangeKey, number | null> = {
   "3M": 90 * 86400000,
   "6M": 180 * 86400000,
   "1Y": 365 * 86400000,
-  "All": null,
+  All: null,
+};
+
+// How many ticks to show per range
+const RANGE_TICKS: Record<RangeKey, number> = {
+  "1M": 10,
+  "3M": 12,
+  "6M": 12,
+  "1Y": 13,
+  All: 8,
 };
 
 function formatDay(ms: number) {
   return new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function formatDayYear(ms: number) {
-  return new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
+function formatDayFull(ms: number) {
+  return new Date(ms).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
-const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { payload: TimelineEntry & { x: number; width: number } }[] }) => {
+const CustomTooltip = ({
+  active,
+  payload,
+  xMin,
+}: {
+  active?: boolean;
+  payload?: { payload: { name: string; ranking: number; startMs: number; endMs: number; offset: number; duration: number } }[];
+  xMin: number;
+}) => {
   if (!active || !payload?.length) return null;
-  const d = payload[0].payload;
+  const d = payload[0]?.payload;
+  if (!d || d.duration === 0) return null;
   return (
     <div className="bg-[#1e2a3a] border border-slate-700 rounded-xl px-4 py-3 text-sm shadow-xl">
       <p className="font-bold text-white">{d.name}</p>
-      <p className="text-slate-400">{formatDayYear(d.startMs)} → {d.endMs > Date.now() ? "Now" : formatDayYear(d.endMs)}</p>
+      <p className="text-slate-400">
+        {formatDayFull(d.startMs)} → {d.endMs > Date.now() ? "Now" : formatDayFull(d.endMs)}
+      </p>
       <p className="text-blue-400 font-semibold">Ranking: {d.ranking}/10</p>
       <p className="text-slate-400">{Math.floor((d.endMs - d.startMs) / 86400000)} days</p>
     </div>
@@ -48,14 +72,6 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { payl
 
 export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
   const [range, setRange] = useState<RangeKey>("All");
-
-  const allChartData = useMemo(() => {
-    return data.map((entry) => ({
-      ...entry,
-      x: entry.startMs,
-      width: Math.max(entry.endMs - entry.startMs, 86400000), // min 1 day
-    }));
-  }, [data]);
 
   if (data.length === 0) {
     return (
@@ -70,23 +86,39 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
   const globalMax = Math.max(...data.map((d) => d.endMs));
 
   const rangeMs = RANGE_MS[range];
-  const domainMin = rangeMs ? Math.max(globalMin, now - rangeMs) : globalMin;
-  const domainMax = globalMax;
-  const padding = Math.max((domainMax - domainMin) * 0.03, 86400000);
+  // xMin: left edge of the visible window
+  const xMin = rangeMs ? Math.max(globalMin, now - rangeMs) : globalMin;
+  const xMax = globalMax;
+  const pad = Math.max((xMax - xMin) * 0.04, 86400000); // at least 1 day padding
 
-  // Only show entries that overlap the visible range
-  const visibleData = allChartData.filter(
-    (d) => d.endMs >= domainMin && d.startMs <= domainMax
-  );
+  // Build relative chart data: offset (invisible lead) + duration (visible bar)
+  // Both values are in ms, relative to xMin so the domain is [0, xMax-xMin+pad]
+  const chartData = useMemo(() => {
+    return data
+      .filter((d) => d.endMs >= xMin && d.startMs <= xMax)
+      .map((d) => {
+        const clampedStart = Math.max(d.startMs, xMin);
+        const clampedEnd = Math.min(d.endMs, xMax);
+        return {
+          name: d.name,
+          id: d.id,
+          ranking: d.ranking,
+          status: d.status,
+          startMs: d.startMs,
+          endMs: d.endMs,
+          offset: clampedStart - xMin,
+          duration: Math.max(clampedEnd - clampedStart, 86400000), // min 1 day
+        };
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, range]);
 
-  // Pick tick count based on range span in days
-  const spanDays = (domainMax - domainMin) / 86400000;
-  const tickCount = spanDays <= 31 ? Math.ceil(spanDays) : spanDays <= 180 ? 6 : 8;
+  const domainMax = xMax - xMin + pad;
 
   return (
     <div className="space-y-3">
       {/* Range selector */}
-      <div className="flex gap-1.5 flex-wrap">
+      <div className="flex gap-1.5">
         {RANGES.map((r) => (
           <button
             key={r}
@@ -102,19 +134,17 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
         ))}
       </div>
 
-      <ResponsiveContainer width="100%" height={Math.max(200, visibleData.length * 52 + 40)}>
+      <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 52 + 40)}>
         <ComposedChart
           layout="vertical"
-          data={visibleData}
+          data={chartData}
           margin={{ top: 8, right: 24, bottom: 8, left: 60 }}
         >
           <XAxis
             type="number"
-            dataKey="x"
-            domain={[domainMin - padding, domainMax + padding]}
-            scale="time"
-            tickFormatter={formatDay}
-            tickCount={tickCount}
+            domain={[0, domainMax]}
+            tickFormatter={(v) => formatDay(xMin + v)}
+            tickCount={RANGE_TICKS[range]}
             tick={{ fill: "#94a3b8", fontSize: 11 }}
             axisLine={{ stroke: "#334155" }}
             tickLine={false}
@@ -127,9 +157,20 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
             tickLine={false}
             width={60}
           />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="width" background={{ fill: "#1e293b", radius: 6 }} radius={6} minPointSize={8}>
-            {visibleData.map((entry) => (
+          <Tooltip content={<CustomTooltip xMin={xMin} />} />
+
+          {/* Invisible offset bar — pushes the visible bar to the right start position */}
+          <Bar dataKey="offset" stackId="timeline" fill="transparent" isAnimationActive={false} />
+
+          {/* Visible duration bar */}
+          <Bar
+            dataKey="duration"
+            stackId="timeline"
+            radius={6}
+            background={{ fill: "#1e293b", radius: 6 }}
+            isAnimationActive={false}
+          >
+            {chartData.map((entry) => (
               <Cell key={entry.id} fill={rankingColor(entry.ranking)} fillOpacity={0.85} />
             ))}
           </Bar>
