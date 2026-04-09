@@ -71,6 +71,19 @@ const CustomTooltip = ({
   );
 };
 
+function CustomYTick({ x, y, payload, statusMap, isDark }: { x?: number; y?: number; payload?: { value: string }; statusMap: Map<string, string>; isDark: boolean }) {
+  const isActive = statusMap.get(payload?.value ?? "") === "ACTIVE";
+  const textColor = isDark ? "#e2e8f0" : "#0f172a";
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {isActive && <circle cx={-68} cy={3} r={3.5} fill="#22c55e" />}
+      <text x={-6} dy={4} textAnchor="end" fill={textColor} fontSize={13} fontWeight={600}>
+        {payload?.value}
+      </text>
+    </g>
+  );
+}
+
 function useDarkMode() {
   const [isDark, setIsDark] = useState(true);
   useMemo(() => {
@@ -88,6 +101,7 @@ function useDarkMode() {
 export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
   const [range, setRange] = useState<RangeKey>("All");
   const isDark = useDarkMode();
+  const statusMap = useMemo(() => new Map(data.map((d) => [d.name, d.status])), [data]);
 
   if (data.length === 0) {
     return (
@@ -169,10 +183,10 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
           <YAxis
             type="category"
             dataKey="name"
-            tick={{ fill: isDark ? "#e2e8f0" : "#0f172a", fontSize: 13, fontWeight: 600 }}
+            tick={(props) => <CustomYTick {...props} statusMap={statusMap} isDark={isDark} />}
             axisLine={false}
             tickLine={false}
-            width={60}
+            width={72}
           />
           <Tooltip content={<CustomTooltip xMin={xMin} />} />
 
