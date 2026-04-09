@@ -24,7 +24,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
     occupation: initial?.occupation || "",
     startDate: initial?.startDate ? initial.startDate.slice(0, 10) : "",
     endDate: initial?.endDate ? initial.endDate.slice(0, 10) : "",
-    ranking: initial?.ranking?.toString() || "5",
+    ranking: initial?.ranking?.toString() || "5.5",
     notes: initial?.notes || "",
     status: initial?.status || "ACTIVE",
   });
@@ -44,7 +44,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
       occupation: form.occupation || null,
       startDate: form.startDate ? new Date(form.startDate + "T12:00:00Z").toISOString() : null,
       endDate: ongoing ? null : (form.endDate ? new Date(form.endDate + "T12:00:00Z").toISOString() : null),
-      ranking: parseInt(form.ranking),
+      ranking: parseFloat(form.ranking),
       notes: form.notes || null,
       status: form.status,
     };
@@ -63,7 +63,8 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
       const data = text ? JSON.parse(text) : {};
 
       if (!res.ok) {
-        throw new Error(typeof data.error === "string" ? data.error : "Something went wrong");
+        const msg = typeof data.error === "string" ? data.error : data.error?.formErrors?.[0] ?? JSON.stringify(data.error);
+      throw new Error(msg || "Something went wrong");
       }
 
       router.push("/girls");
@@ -170,19 +171,20 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
 
       <div>
         <label className={labelClass}>
-          Ranking: <span className="text-blue-400 font-bold">{form.ranking}/10</span>
+          Ranking: <span className="text-blue-400 font-bold">{parseFloat(form.ranking).toFixed(1)}/10</span>
         </label>
         <input
           type="range"
           min={1}
           max={10}
+          step={0.1}
           value={form.ranking}
           onChange={(e) => set("ranking", e.target.value)}
           className="w-full accent-blue-500"
         />
         <div className="flex justify-between text-xs text-slate-500 mt-1">
           <span>1</span>
-          <span>5</span>
+          <span>5.5</span>
           <span>10</span>
         </div>
       </div>

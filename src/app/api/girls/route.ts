@@ -16,7 +16,7 @@ const createGirlSchema = z.object({
   occupation: z.string().max(100).optional().nullable(),
   startDate: z.string().datetime(),
   endDate: z.string().datetime().optional().nullable(),
-  ranking: z.number().int().min(1).max(10),
+  ranking: z.number().min(1).max(10),
   notes: z.string().max(2000).optional().nullable(),
   status: z.enum(["ACTIVE", "PAST"]).default("ACTIVE"),
 });
@@ -38,13 +38,17 @@ export async function POST(req: NextRequest) {
   const parsed = createGirlSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const girl = await prisma.girl.create({
-    data: {
-      ...parsed.data,
-      startDate: new Date(parsed.data.startDate),
-      endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : null,
-    },
-  });
-
-  return NextResponse.json(girl, { status: 201 });
+  try {
+    const girl = await prisma.girl.create({
+      data: {
+        ...parsed.data,
+        startDate: new Date(parsed.data.startDate),
+        endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : null,
+      },
+    });
+    return NextResponse.json(girl, { status: 201 });
+  } catch (err) {
+    console.error("DB error creating girl:", err);
+    return NextResponse.json({ error: "Database error: " + (err instanceof Error ? err.message : String(err)) }, { status: 500 });
+  }
 }

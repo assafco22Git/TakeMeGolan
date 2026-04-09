@@ -22,7 +22,7 @@ model Girl {
   occupation String?
   startDate  DateTime
   endDate    DateTime?
-  ranking    Int
+  ranking    Float
   notes      String?
   status     Status    @default(ACTIVE)
   createdAt  DateTime  @default(now())

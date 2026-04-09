@@ -16,7 +16,7 @@ const updateGirlSchema = z.object({
   occupation: z.string().max(100).optional().nullable(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional().nullable(),
-  ranking: z.number().int().min(1).max(10).optional(),
+  ranking: z.number().min(1).max(10).optional(),
   notes: z.string().max(2000).optional().nullable(),
   status: z.enum(["ACTIVE", "PAST"]).optional(),
 });
@@ -47,8 +47,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (parsed.data.startDate) data.startDate = new Date(parsed.data.startDate);
   if (parsed.data.endDate !== undefined) data.endDate = parsed.data.endDate ? new Date(parsed.data.endDate) : null;
 
-  const girl = await prisma.girl.update({ where: { id }, data });
-  return NextResponse.json(girl);
+  try {
+    const girl = await prisma.girl.update({ where: { id }, data });
+    return NextResponse.json(girl);
+  } catch (err) {
+    console.error("DB error updating girl:", err);
+    return NextResponse.json({ error: "Database error: " + (err instanceof Error ? err.message : String(err)) }, { status: 500 });
+  }
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
