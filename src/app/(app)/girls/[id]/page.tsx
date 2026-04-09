@@ -18,14 +18,14 @@ export default async function GirlDetailPage({ params }: { params: Promise<{ id:
     <div className="px-4 py-6 md:px-8 max-w-2xl mx-auto w-full">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">{girl.name}</h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{girl.name}</h1>
+          <p className="text-slate-500 text-sm mt-1">
             {formatDate(girl.startDate)} – {formatDate(girl.endDate)}
           </p>
         </div>
         {role === "OWNER" && <DeleteButton girlId={id} />}
       </div>
-      <div className="bg-[#111827] rounded-2xl p-6 border border-slate-800">
+      <div className="bg-white dark:bg-[#111827] rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
         <GirlForm
           mode="edit"
           girlId={id}

@@ -83,8 +83,8 @@ export default async function DashboardPage() {
     <div className="px-4 py-6 md:px-8 max-w-5xl mx-auto w-full space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-slate-400 text-sm mt-0.5">Golan&apos;s dating overview</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+          <p className="text-slate-500 text-sm mt-0.5">Golan&apos;s dating overview</p>
         </div>
         {role === "OWNER" && (
           <Link href="/girls/new" className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
@@ -97,40 +97,40 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-[#111827] rounded-2xl p-4 border border-slate-800">
-          <p className="text-slate-400 text-xs uppercase tracking-wider">Total</p>
-          <p className="text-3xl font-bold text-white mt-1">{leaderboard.length}</p>
+        <div className="bg-white dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-slate-800">
+          <p className="text-slate-500 text-xs uppercase tracking-wider">Total</p>
+          <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{leaderboard.length}</p>
         </div>
-        <div className="bg-[#111827] rounded-2xl p-4 border border-slate-800">
-          <p className="text-slate-400 text-xs uppercase tracking-wider">Active</p>
-          <p className="text-3xl font-bold text-green-400 mt-1">{activeCount}</p>
+        <div className="bg-white dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-slate-800">
+          <p className="text-slate-500 text-xs uppercase tracking-wider">Active</p>
+          <p className="text-3xl font-bold text-green-500 mt-1">{activeCount}</p>
         </div>
-        <div className="bg-[#111827] rounded-2xl p-4 border border-slate-800">
-          <p className="text-slate-400 text-xs uppercase tracking-wider">Avg Rank</p>
-          <p className="text-3xl font-bold text-blue-400 mt-1">{avgRanking || "—"}</p>
+        <div className="bg-white dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-slate-800">
+          <p className="text-slate-500 text-xs uppercase tracking-wider">Avg Rank</p>
+          <p className="text-3xl font-bold text-blue-500 mt-1">{avgRanking || "—"}</p>
         </div>
       </div>
 
-      <div className="bg-[#111827] rounded-2xl p-5 border border-slate-800">
+      <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
         <div className="mb-4">
-          <h2 className="text-white font-semibold">Relationship Timeline</h2>
-          <p className="text-slate-400 text-xs mt-0.5">Duration &amp; ranking over time</p>
+          <h2 className="text-slate-900 dark:text-white font-semibold">Relationship Timeline</h2>
+          <p className="text-slate-500 text-xs mt-0.5">Duration &amp; ranking over time</p>
         </div>
         <DashboardTimelineChart data={timeline} />
       </div>
 
-      <div className="bg-[#111827] rounded-2xl p-5 border border-slate-800">
+      <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
         <div className="mb-4">
-          <h2 className="text-white font-semibold">Leaderboard</h2>
-          <p className="text-slate-400 text-xs mt-0.5">Ranked by score</p>
+          <h2 className="text-slate-900 dark:text-white font-semibold">Leaderboard</h2>
+          <p className="text-slate-500 text-xs mt-0.5">Ranked by score</p>
         </div>
         <LeaderboardTable data={leaderboard} />
       </div>
 
-      <div className="bg-[#111827] rounded-2xl p-5 border border-slate-800">
+      <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
         <div className="mb-4">
-          <h2 className="text-white font-semibold">Distribution</h2>
-          <p className="text-slate-400 text-xs mt-0.5">Explore data by category</p>
+          <h2 className="text-slate-900 dark:text-white font-semibold">Distribution</h2>
+          <p className="text-slate-500 text-xs mt-0.5">Explore data by category</p>
         </div>
         <DashboardCustomChart initialData={distribution} initialGroupBy="origin" />
       </div>

@@ -76,8 +76,8 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
   }
 
   const inputClass =
-    "w-full bg-[#0a0f1e] border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm";
-  const labelClass = "block text-sm font-medium text-slate-300 mb-1.5";
+    "w-full bg-slate-50 dark:bg-[#0a0f1e] border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm";
+  const labelClass = "block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -191,7 +191,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
         <button
           type="button"
           onClick={() => router.back()}
-          className="flex-1 py-3 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors text-sm font-medium"
+          className="flex-1 py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm font-medium"
         >
           Cancel
         </button>

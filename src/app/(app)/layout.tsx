@@ -8,9 +8,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!role) redirect("/login");
 
   return (
-    <div className="flex min-h-screen bg-[#0a0f1e]">
+    <div className="flex h-screen overflow-hidden bg-slate-100 dark:bg-[#0a0f1e]">
       <Sidebar role={role} />
-      <main className="flex-1 flex flex-col min-w-0 pb-20 md:pb-0">
+      <main className="flex-1 overflow-y-auto min-w-0 pb-20 md:pb-0">
         {children}
       </main>
       <MobileNav />

@@ -36,7 +36,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full bg-[#0a0f1e] text-slate-100">{children}</body>
+      <body className="min-h-full bg-slate-100 dark:bg-[#0a0f1e] text-slate-900 dark:text-slate-100">{children}</body>
     </html>
   );
 }

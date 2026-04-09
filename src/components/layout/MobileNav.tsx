@@ -44,7 +44,7 @@ export default function MobileNav() {
   }
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#111827] border-t border-slate-800 z-50">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#111827] border-t border-slate-200 dark:border-slate-800 z-50">
       <div className="flex items-center justify-around px-2 py-2 safe-pb">
         {navLinks.map((link) => {
           const active = pathname === link.href || pathname.startsWith(link.href + "/");
@@ -54,7 +54,7 @@ export default function MobileNav() {
               href={link.href}
               className={cn(
                 "flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-colors",
-                active ? "text-blue-400" : "text-slate-500"
+                active ? "text-blue-500" : "text-slate-500 dark:text-slate-500"
               )}
             >
               {link.icon}
@@ -64,7 +64,7 @@ export default function MobileNav() {
         })}
         <button
           onClick={handleSwitch}
-          className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-colors text-slate-500 hover:text-slate-300"
+          className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-colors text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />

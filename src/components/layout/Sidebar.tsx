@@ -49,14 +49,14 @@ export default function Sidebar({ role }: { role: Role }) {
   const displayName = role === "OWNER" ? "Golan 🦁" : "Golan's friend 👀";
 
   return (
-    <aside className="hidden md:flex flex-col w-60 min-h-screen bg-[#111827] border-r border-slate-800 px-4 py-6">
+    <aside className="hidden md:flex flex-col w-60 h-screen flex-shrink-0 bg-white dark:bg-[#111827] border-r border-slate-200 dark:border-slate-800 px-4 py-6">
       {/* Logo */}
       <div className="flex items-center gap-3 px-2 mb-8">
         <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-lg">
           💙
         </div>
         <div>
-          <p className="font-bold text-white text-sm">Take me Golan</p>
+          <p className="font-bold text-slate-900 dark:text-white text-sm">Take me Golan</p>
           <p className="text-slate-500 text-xs">Dating tracker</p>
         </div>
       </div>
@@ -73,7 +73,7 @@ export default function Sidebar({ role }: { role: Role }) {
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
                 active
                   ? "bg-blue-600 text-white"
-                  : "text-slate-400 hover:text-white hover:bg-slate-800"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
               )}
             >
               {link.icon}
@@ -84,17 +84,17 @@ export default function Sidebar({ role }: { role: Role }) {
       </nav>
 
       {/* Bottom section */}
-      <div className="space-y-3 pt-4 border-t border-slate-800">
+      <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
         <div className="flex items-center justify-between px-2">
           <div>
-            <p className="text-sm font-medium text-white">{displayName}</p>
+            <p className="text-sm font-medium text-slate-900 dark:text-white">{displayName}</p>
             <p className="text-xs text-slate-500">{role === "OWNER" ? "Full access" : "View & edit"}</p>
           </div>
           <ThemeToggle />
         </div>
         <button
           onClick={handleSwitch}
-          className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />

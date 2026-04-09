@@ -51,8 +51,8 @@ export default async function MonthlyPage() {
   return (
     <div className="px-4 py-6 md:px-8 max-w-3xl mx-auto w-full">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Monthly Summary</h1>
-        <p className="text-slate-400 text-sm mt-0.5">
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Monthly Summary</h1>
+        <p className="text-slate-500 text-sm mt-0.5">
           {currentlyActive} active · {months.length} months tracked
         </p>
       </div>
@@ -66,18 +66,18 @@ export default async function MonthlyPage() {
 
       <div className="space-y-4">
         {months.map((m) => (
-          <div key={m.month} className="bg-[#111827] rounded-2xl p-5 border border-slate-800">
+          <div key={m.month} className="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-white font-semibold text-lg">{m.label}</h2>
-                <p className="text-slate-400 text-xs">
+                <h2 className="text-slate-900 dark:text-white font-semibold text-lg">{m.label}</h2>
+                <p className="text-slate-500 text-xs">
                   {m.newGirls.length} new entr{m.newGirls.length === 1 ? "y" : "ies"} · avg {m.avgRanking}/10
                 </p>
               </div>
               {m.topGirl && (
                 <div className="text-right">
                   <p className="text-xs text-slate-500">Top this month</p>
-                  <Link href={`/girls/${m.topGirl.id}`} className="text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors">
+                  <Link href={`/girls/${m.topGirl.id}`} className="text-sm font-semibold text-blue-500 hover:text-blue-400 transition-colors">
                     {m.topGirl.name}
                   </Link>
                 </div>
@@ -85,9 +85,9 @@ export default async function MonthlyPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               {m.newGirls.map((g) => (
-                <Link key={g.id} href={`/girls/${g.id}`} className="flex items-center gap-2 bg-[#0a0f1e] border border-slate-800 rounded-xl px-3 py-1.5 hover:border-slate-600 transition-colors">
+                <Link key={g.id} href={`/girls/${g.id}`} className="flex items-center gap-2 bg-slate-100 dark:bg-[#0a0f1e] border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 hover:border-slate-400 dark:hover:border-slate-600 transition-colors">
                   <span className="text-xs font-bold" style={{ color: rankingColor(g.ranking) }}>{g.ranking}</span>
-                  <span className="text-sm text-slate-300">{g.name}</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-300">{g.name}</span>
                 </Link>
               ))}
             </div>

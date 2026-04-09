@@ -23,8 +23,8 @@ export default async function GirlsPage() {
     <div className="px-4 py-6 md:px-8 max-w-3xl mx-auto w-full">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Girls</h1>
-          <p className="text-slate-400 text-sm mt-0.5">{girls.length} total</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Girls</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{girls.length} total</p>
         </div>
         {role === "OWNER" && (
           <Link href="/girls/new" className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors">
@@ -41,7 +41,7 @@ export default async function GirlsPage() {
           <p className="text-4xl mb-4">💙</p>
           <p className="text-lg">No entries yet</p>
           {role === "OWNER" && (
-            <Link href="/girls/new" className="mt-4 inline-block text-blue-400 hover:text-blue-300 text-sm">
+            <Link href="/girls/new" className="mt-4 inline-block text-blue-500 hover:text-blue-400 text-sm">
               Add the first one
             </Link>
           )}
@@ -75,21 +75,21 @@ function GirlCard({ girl }: { girl: { id: string; name: string; origin: string |
 
   return (
     <Link href={`/girls/${girl.id}`}>
-      <div className="bg-[#111827] hover:bg-[#1a2436] border border-slate-800 rounded-2xl p-4 flex items-center gap-4 transition-colors cursor-pointer">
+      <div className="bg-white dark:bg-[#111827] hover:bg-slate-50 dark:hover:bg-[#1a2436] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center gap-4 transition-colors cursor-pointer">
         <div className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg" style={{ backgroundColor: color + "22", color }}>
           {girl.ranking}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-semibold text-white truncate">{girl.name}</p>
+            <p className="font-semibold text-slate-900 dark:text-white truncate">{girl.name}</p>
             {girl.status === "ACTIVE" && <span className="flex-shrink-0 w-2 h-2 rounded-full bg-green-400" />}
           </div>
-          <p className="text-slate-400 text-sm truncate">
+          <p className="text-slate-500 text-sm truncate">
             {[girl.origin, girl.occupation].filter(Boolean).join(" · ") || "No details"}
           </p>
         </div>
         <div className="flex-shrink-0 text-right">
-          <p className="text-slate-300 text-sm font-medium">{days}d</p>
+          <p className="text-slate-700 dark:text-slate-300 text-sm font-medium">{days}d</p>
           <p className="text-slate-500 text-xs">{formatDate(girl.startDate)}</p>
         </div>
       </div>

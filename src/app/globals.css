@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Use .dark class (not media query) for dark mode */
+@variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
@@ -20,6 +23,9 @@
 }
 
 html {
+  color-scheme: light;
+}
+html.dark {
   color-scheme: dark;
 }
 
