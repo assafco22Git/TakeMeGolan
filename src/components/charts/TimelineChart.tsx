@@ -85,8 +85,7 @@ function CustomYTick({ x, y, payload, statusMap, isDark }: { x?: number; y?: num
   const textColor = isDark ? "#e2e8f0" : "#0f172a";
   return (
     <g transform={`translate(${x},${y})`}>
-      {isActive && <circle cx={-68} cy={3} r={3.5} fill="#22c55e" />}
-      <text x={-6} dy={4} textAnchor="end" fill={textColor} fontSize={13} fontWeight={600}>
+      <text x={0} dy={4} textAnchor="end" fill={textColor} fontSize={13} fontWeight={600}>
         {payload?.value}
       </text>
     </g>
