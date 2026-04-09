@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
+import { cookies } from "next/headers";
+import { ROLE_COOKIE } from "@/lib/role";
 import { z } from "zod";
-import type { Role } from "@/types";
+
+async function getRole() {
+  const store = await cookies();
+  const val = store.get(ROLE_COOKIE)?.value;
+  return val === "OWNER" || val === "ADMIN" ? val : null;
+}
 
 const updateGirlSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -15,64 +21,40 @@ const updateGirlSchema = z.object({
   status: z.enum(["ACTIVE", "PAST"]).optional(),
 });
 
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const role = await getRole();
+  if (!role) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
   const girl = await prisma.girl.findUnique({ where: { id } });
   if (!girl) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
   return NextResponse.json(girl);
 }
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const role = await getRole();
+  if (!role) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
   const body = await req.json();
   const parsed = updateGirlSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const existing = await prisma.girl.findUnique({ where: { id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const data: Record<string, unknown> = { ...parsed.data };
   if (parsed.data.startDate) data.startDate = new Date(parsed.data.startDate);
-  if (parsed.data.endDate !== undefined) {
-    data.endDate = parsed.data.endDate ? new Date(parsed.data.endDate) : null;
-  }
+  if (parsed.data.endDate !== undefined) data.endDate = parsed.data.endDate ? new Date(parsed.data.endDate) : null;
 
   const girl = await prisma.girl.update({ where: { id }, data });
   return NextResponse.json(girl);
 }
 
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const role = (session.user as { role: Role }).role;
-  if (role !== "OWNER") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const role = await getRole();
+  if (!role) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (role !== "OWNER") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { id } = await params;
   const existing = await prisma.girl.findUnique({ where: { id } });

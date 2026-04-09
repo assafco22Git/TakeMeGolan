@@ -1,13 +1,10 @@
-import { auth } from "@/auth";
+import { getRole } from "@/lib/role";
 import { redirect } from "next/navigation";
 import GirlForm from "@/components/girls/GirlForm";
-import type { Role } from "@/types";
 
 export default async function NewGirlPage() {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
-
-  const role = (session.user as { role: Role }).role;
+  const role = await getRole();
+  if (!role) redirect("/login");
   if (role !== "OWNER") redirect("/girls");
 
   return (

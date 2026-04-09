@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
 import ThemeToggle from "./ThemeToggle";
 import { cn } from "@/lib/utils";
+import type { Role } from "@/lib/role";
 
 const navLinks = [
   {
@@ -36,11 +36,20 @@ const navLinks = [
   },
 ];
 
-export default function Sidebar({ username, role }: { username: string; role: string }) {
+export default function Sidebar({ role }: { role: Role }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleSwitch() {
+    await fetch("/api/select-role", { method: "DELETE" });
+    router.push("/login");
+    router.refresh();
+  }
+
+  const displayName = role === "OWNER" ? "Golan 🦁" : "Golan's friend 👀";
 
   return (
-    <aside className="hidden md:flex flex-col w-60 min-h-screen bg-[#111827] dark:bg-[#0d1525] border-r border-slate-800 px-4 py-6">
+    <aside className="hidden md:flex flex-col w-60 min-h-screen bg-[#111827] border-r border-slate-800 px-4 py-6">
       {/* Logo */}
       <div className="flex items-center gap-3 px-2 mb-8">
         <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-lg">
@@ -78,19 +87,19 @@ export default function Sidebar({ username, role }: { username: string; role: st
       <div className="space-y-3 pt-4 border-t border-slate-800">
         <div className="flex items-center justify-between px-2">
           <div>
-            <p className="text-sm font-medium text-white">{username}</p>
-            <p className="text-xs text-slate-500">{role === "OWNER" ? "Owner" : "Admin"}</p>
+            <p className="text-sm font-medium text-white">{displayName}</p>
+            <p className="text-xs text-slate-500">{role === "OWNER" ? "Full access" : "View & edit"}</p>
           </div>
           <ThemeToggle />
         </div>
         <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={handleSwitch}
           className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
           </svg>
-          Sign out
+          Switch user
         </button>
       </div>
     </aside>

@@ -1,18 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
+import { cookies } from "next/headers";
+import { ROLE_COOKIE } from "@/lib/role";
 import type { TimelineEntry, LeaderboardEntry, DistributionEntry, MonthlyStats, ChartGroupBy } from "@/types";
 
+async function getRole() {
+  const store = await cookies();
+  const val = store.get(ROLE_COOKIE)?.value;
+  return val === "OWNER" || val === "ADMIN" ? val : null;
+}
+
 function durationDays(start: Date, end?: Date | null): number {
-  const endDate = end ?? new Date();
-  return Math.max(1, Math.floor((endDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+  return Math.max(1, Math.floor(((end ?? new Date()).getTime() - start.getTime()) / 86400000));
 }
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const role = await getRole();
+  if (!role) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const view = searchParams.get("view") || "all";
@@ -21,76 +25,44 @@ export async function GET(req: NextRequest) {
   interface GirlRow { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date; endDate: Date | null; ranking: number; status: string; }
   const girls = (await prisma.girl.findMany({ orderBy: { startDate: "asc" } })) as GirlRow[];
 
-  // Timeline data
   const timeline: TimelineEntry[] = girls.map((g) => ({
-    id: g.id,
-    name: g.name,
+    id: g.id, name: g.name,
     startMs: g.startDate.getTime(),
     endMs: (g.endDate ?? new Date()).getTime(),
-    ranking: g.ranking,
-    status: g.status as "ACTIVE" | "PAST",
+    ranking: g.ranking, status: g.status as "ACTIVE" | "PAST",
   }));
 
-  // Leaderboard data
-  const leaderboard: LeaderboardEntry[] = girls
+  const leaderboard: LeaderboardEntry[] = [...girls]
     .sort((a, b) => b.ranking - a.ranking)
     .map((g) => ({
-      id: g.id,
-      name: g.name,
-      origin: g.origin,
-      occupation: g.occupation,
-      ranking: g.ranking,
-      durationDays: durationDays(g.startDate, g.endDate),
+      id: g.id, name: g.name, origin: g.origin, occupation: g.occupation,
+      ranking: g.ranking, durationDays: durationDays(g.startDate, g.endDate),
       status: g.status as "ACTIVE" | "PAST",
     }));
 
-  // Distribution data
-  const distributionMap = new Map<string, { count: number; totalRanking: number }>();
+  const distMap = new Map<string, { count: number; total: number }>();
   for (const g of girls) {
-    const key = (() => {
-      if (groupBy === "status") return g.status;
-      if (groupBy === "occupation") return g.occupation || "Unknown";
-      return g.origin || "Unknown";
-    })();
-    const existing = distributionMap.get(key) ?? { count: 0, totalRanking: 0 };
-    distributionMap.set(key, {
-      count: existing.count + 1,
-      totalRanking: existing.totalRanking + g.ranking,
-    });
+    const key = groupBy === "status" ? g.status : groupBy === "occupation" ? (g.occupation || "Unknown") : (g.origin || "Unknown");
+    const e = distMap.get(key) ?? { count: 0, total: 0 };
+    distMap.set(key, { count: e.count + 1, total: e.total + g.ranking });
   }
-  const distribution: DistributionEntry[] = Array.from(distributionMap.entries())
-    .map(([label, { count, totalRanking }]) => ({
-      label,
-      count,
-      avgRanking: Math.round((totalRanking / count) * 10) / 10,
-    }))
+  const distribution: DistributionEntry[] = Array.from(distMap.entries())
+    .map(([label, { count, total }]) => ({ label, count, avgRanking: Math.round((total / count) * 10) / 10 }))
     .sort((a, b) => b.count - a.count);
 
-  // Monthly data
-  const monthlyMap = new Map<string, { newEntries: number; totalRanking: number; girls: string[] }>();
+  const monthMap = new Map<string, { newEntries: number; totalRanking: number; girls: string[] }>();
   for (const g of girls) {
     const month = g.startDate.toISOString().slice(0, 7);
-    const existing = monthlyMap.get(month) ?? { newEntries: 0, totalRanking: 0, girls: [] };
-    monthlyMap.set(month, {
-      newEntries: existing.newEntries + 1,
-      totalRanking: existing.totalRanking + g.ranking,
-      girls: [...existing.girls, g.name],
-    });
+    const e = monthMap.get(month) ?? { newEntries: 0, totalRanking: 0, girls: [] };
+    monthMap.set(month, { newEntries: e.newEntries + 1, totalRanking: e.totalRanking + g.ranking, girls: [...e.girls, g.name] });
   }
-  const activeNow = girls.filter((g) => g.status === "ACTIVE").length;
-  const monthly: MonthlyStats[] = Array.from(monthlyMap.entries())
+  const monthly: MonthlyStats[] = Array.from(monthMap.entries())
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([month, { newEntries, totalRanking, girls: monthGirls }]) => ({
-      month,
-      newEntries,
-      activeCount: activeNow,
-      avgRanking: Math.round((totalRanking / newEntries) * 10) / 10,
-      topGirl: monthGirls[0] ?? null,
+    .map(([month, { newEntries, totalRanking, girls: mg }]) => ({
+      month, newEntries, activeCount: girls.filter(g => g.status === "ACTIVE").length,
+      avgRanking: Math.round((totalRanking / newEntries) * 10) / 10, topGirl: mg[0] ?? null,
     }));
 
-  if (view === "monthly") {
-    return NextResponse.json({ monthly });
-  }
-
+  if (view === "monthly") return NextResponse.json({ monthly });
   return NextResponse.json({ timeline, leaderboard, distribution, monthly });
 }

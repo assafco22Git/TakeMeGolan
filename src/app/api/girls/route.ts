@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
+import { cookies } from "next/headers";
+import { ROLE_COOKIE } from "@/lib/role";
 import { z } from "zod";
-import type { Role } from "@/types";
+
+async function getRole() {
+  const store = await cookies();
+  const val = store.get(ROLE_COOKIE)?.value;
+  return val === "OWNER" || val === "ADMIN" ? val : null;
+}
 
 const createGirlSchema = z.object({
   name: z.string().min(1).max(100),
@@ -16,34 +22,21 @@ const createGirlSchema = z.object({
 });
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const role = await getRole();
+  if (!role) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const girls = await prisma.girl.findMany({
-    orderBy: { startDate: "desc" },
-  });
-
+  const girls = await prisma.girl.findMany({ orderBy: { startDate: "desc" } });
   return NextResponse.json(girls);
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const role = (session.user as { role: Role }).role;
-  if (role !== "OWNER") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const role = await getRole();
+  if (!role) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (role !== "OWNER") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
   const parsed = createGirlSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const girl = await prisma.girl.create({
     data: {

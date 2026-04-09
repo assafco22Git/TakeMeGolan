@@ -1,26 +1,20 @@
-import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { ROLE_COOKIE } from "@/lib/role";
 
-export default async function proxy(req: NextRequest) {
-  const token = await getToken({
-    req,
-    secret: process.env.AUTH_SECRET,
-  });
-
-  const isLoggedIn = !!token;
+export default function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const role = req.cookies.get(ROLE_COOKIE)?.value;
+  const hasRole = role === "OWNER" || role === "ADMIN";
 
-  // Allow login page
+  // Allow role selector
   if (pathname === "/login") {
-    if (isLoggedIn) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
+    if (hasRole) return NextResponse.redirect(new URL("/dashboard", req.url));
     return NextResponse.next();
   }
 
   // Protect everything else
-  if (!isLoggedIn) {
+  if (!hasRole) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
@@ -28,5 +22,5 @@ export default async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
