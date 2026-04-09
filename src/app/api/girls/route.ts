@@ -13,6 +13,7 @@ async function getRole() {
 const createGirlSchema = z.object({
   name: z.string().min(1).max(100),
   origin: z.string().max(100).optional().nullable(),
+  hometown: z.string().max(100).optional().nullable(),
   occupation: z.string().max(100).optional().nullable(),
   startDate: z.string().datetime().optional().nullable(),
   endDate: z.string().datetime().optional().nullable(),

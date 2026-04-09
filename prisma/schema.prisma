@@ -19,6 +19,7 @@ model Girl {
   id         String    @id @default(cuid())
   name       String
   origin     String?
+  hometown   String?
   occupation String?
   startDate  DateTime
   endDate    DateTime?

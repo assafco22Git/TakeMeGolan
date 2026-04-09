@@ -21,6 +21,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
   const [form, setForm] = useState({
     name: initial?.name || "",
     origin: initial?.origin || "",
+    hometown: initial?.hometown || "",
     occupation: initial?.occupation || "",
     startDate: initial?.startDate ? initial.startDate.slice(0, 10) : "",
     endDate: initial?.endDate ? initial.endDate.slice(0, 10) : "",
@@ -43,6 +44,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
     const payload = {
       name: form.name,
       origin: form.origin || null,
+      hometown: form.hometown || null,
       occupation: form.occupation || null,
       startDate: form.startDate ? new Date(form.startDate + "T12:00:00Z").toISOString() : null,
       endDate: ongoing ? null : (form.endDate ? new Date(form.endDate + "T12:00:00Z").toISOString() : null),
@@ -114,6 +116,17 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
             onChange={(e) => set("origin", e.target.value)}
             className={inputClass}
             placeholder="e.g. Tel Aviv, New York"
+          />
+        </div>
+
+        <div>
+          <label className={labelClass}>Current Hometown</label>
+          <input
+            type="text"
+            value={form.hometown}
+            onChange={(e) => set("hometown", e.target.value)}
+            className={inputClass}
+            placeholder="e.g. Tel Aviv, Berlin"
           />
         </div>
 

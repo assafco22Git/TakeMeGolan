@@ -5,6 +5,7 @@ export interface Girl {
   id: string;
   name: string;
   origin: string | null;
+  hometown: string | null;
   occupation: string | null;
   startDate: string;
   endDate: string | null;
