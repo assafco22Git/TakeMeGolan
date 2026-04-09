@@ -26,7 +26,6 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
     endDate: initial?.endDate ? initial.endDate.slice(0, 10) : "",
     ranking: initial?.ranking?.toString() || "5",
     notes: initial?.notes || "",
-    status: initial?.status || "ACTIVE",
   });
 
   function set(field: string, value: string) {
@@ -46,7 +45,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
       endDate: ongoing ? null : (form.endDate ? new Date(form.endDate + "T12:00:00Z").toISOString() : null),
       ranking: parseFloat(form.ranking),
       notes: form.notes || null,
-      status: form.status,
+      status: ongoing ? "ACTIVE" : "PAST",
     };
 
     try {
@@ -112,7 +111,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
           />
         </div>
 
-        <div>
+        <div className="sm:col-span-2">
           <label className={labelClass}>Occupation</label>
           <input
             type="text"
@@ -121,18 +120,6 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
             className={inputClass}
             placeholder="e.g. Designer, Engineer"
           />
-        </div>
-
-        <div>
-          <label className={labelClass}>Status</label>
-          <select
-            value={form.status}
-            onChange={(e) => set("status", e.target.value)}
-            className={inputClass}
-          >
-            <option value="ACTIVE">Active 💚</option>
-            <option value="PAST">Past 💀</option>
-          </select>
         </div>
 
         <div>
