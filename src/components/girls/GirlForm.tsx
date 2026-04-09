@@ -15,6 +15,9 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const isOngoing = !initial?.endDate;
+  const [ongoing, setOngoing] = useState(isOngoing);
+
   const [form, setForm] = useState({
     name: initial?.name || "",
     origin: initial?.origin || "",
@@ -39,8 +42,8 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
       name: form.name,
       origin: form.origin || null,
       occupation: form.occupation || null,
-      startDate: form.startDate ? new Date(form.startDate).toISOString() : null,
-      endDate: form.endDate ? new Date(form.endDate).toISOString() : null,
+      startDate: form.startDate ? new Date(form.startDate + "T12:00:00Z").toISOString() : null,
+      endDate: ongoing ? null : (form.endDate ? new Date(form.endDate + "T12:00:00Z").toISOString() : null),
       ranking: parseInt(form.ranking),
       notes: form.notes || null,
       status: form.status,
@@ -56,9 +59,11 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
         }
       );
 
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
+
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Something went wrong");
+        throw new Error(typeof data.error === "string" ? data.error : "Something went wrong");
       }
 
       router.push("/girls");
@@ -125,7 +130,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
             className={inputClass}
           >
             <option value="ACTIVE">Active 💚</option>
-            <option value="PAST">Past</option>
+            <option value="PAST">Past 💀</option>
           </select>
         </div>
 
@@ -142,12 +147,24 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
 
         <div>
           <label className={labelClass}>End Date</label>
-          <input
-            type="date"
-            value={form.endDate}
-            onChange={(e) => set("endDate", e.target.value)}
-            className={inputClass}
-          />
+          {/* Still ongoing toggle */}
+          <label className="flex items-center gap-2 mb-2 cursor-pointer w-fit">
+            <div
+              onClick={() => setOngoing((v) => !v)}
+              className={`w-9 h-5 rounded-full transition-colors flex items-center px-0.5 ${ongoing ? "bg-green-500" : "bg-slate-700"}`}
+            >
+              <div className={`w-4 h-4 rounded-full bg-white transition-transform ${ongoing ? "translate-x-4" : "translate-x-0"}`} />
+            </div>
+            <span className="text-sm text-slate-400">Still ongoing 💚</span>
+          </label>
+          {!ongoing && (
+            <input
+              type="date"
+              value={form.endDate}
+              onChange={(e) => set("endDate", e.target.value)}
+              className={inputClass}
+            />
+          )}
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -36,6 +36,12 @@ const navLinks = [
 
 export default function MobileNav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleSwitch() {
+    await fetch("/api/select-role", { method: "DELETE" });
+    router.push("/login");
+  }
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#111827] border-t border-slate-800 z-50">
@@ -56,6 +62,15 @@ export default function MobileNav() {
             </Link>
           );
         })}
+        <button
+          onClick={handleSwitch}
+          className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-colors text-slate-500 hover:text-slate-300"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          </svg>
+          <span className="text-xs font-medium">Switch</span>
+        </button>
       </div>
     </nav>
   );
