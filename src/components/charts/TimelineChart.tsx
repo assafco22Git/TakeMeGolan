@@ -59,11 +59,20 @@ const CustomTooltip = ({
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
   if (!d || d.duration === 0) return null;
+  const isActive = d.endMs > Date.now();
   return (
     <div className="bg-[#1e2a3a] border border-slate-700 rounded-xl px-4 py-3 text-sm shadow-xl">
-      <p className="font-bold text-white">{d.name}</p>
+      <div className="flex items-center gap-2 mb-1">
+        <p className="font-bold text-white">{d.name}</p>
+        {isActive && (
+          <>
+            <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0" />
+            <span className="text-green-400 text-xs font-medium">ongoing</span>
+          </>
+        )}
+      </div>
       <p className="text-slate-400">
-        {formatDayFull(d.startMs)} → {d.endMs > Date.now() ? "Now" : formatDayFull(d.endMs)}
+        {formatDayFull(d.startMs)} → {isActive ? "Now" : formatDayFull(d.endMs)}
       </p>
       <p className="text-blue-400 font-semibold">Ranking: {d.ranking}/10</p>
       <p className="text-slate-400">{Math.floor((d.endMs - d.startMs) / 86400000)} days</p>
