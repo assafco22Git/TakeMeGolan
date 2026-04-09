@@ -8,8 +8,19 @@ import type { Role } from "@/types";
 
 export const dynamic = "force-dynamic";
 
+interface GirlRow {
+  id: string;
+  name: string;
+  origin: string | null;
+  occupation: string | null;
+  startDate: Date;
+  endDate: Date | null;
+  ranking: number;
+  status: string;
+}
+
 async function getStats() {
-  const girls = await prisma.girl.findMany({ orderBy: { startDate: "asc" } });
+  const girls = (await prisma.girl.findMany({ orderBy: { startDate: "asc" } })) as GirlRow[];
 
   function dur(start: Date, end?: Date | null) {
     return Math.max(1, Math.floor(((end ?? new Date()).getTime() - start.getTime()) / 86400000));

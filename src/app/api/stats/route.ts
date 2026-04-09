@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
   const view = searchParams.get("view") || "all";
   const groupBy = (searchParams.get("groupBy") || "origin") as ChartGroupBy;
 
-  const girls = await prisma.girl.findMany({ orderBy: { startDate: "asc" } });
+  interface GirlRow { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date; endDate: Date | null; ranking: number; status: string; }
+  const girls = (await prisma.girl.findMany({ orderBy: { startDate: "asc" } })) as GirlRow[];
 
   // Timeline data
   const timeline: TimelineEntry[] = girls.map((g) => ({

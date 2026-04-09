@@ -6,8 +6,10 @@ import { formatDate, rankingColor } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
+interface GirlRow { id: string; name: string; startDate: Date; ranking: number; }
+
 async function getMonthlyData() {
-  const girls = await prisma.girl.findMany({ orderBy: { startDate: "asc" } });
+  const girls = (await prisma.girl.findMany({ orderBy: { startDate: "asc" } })) as GirlRow[];
 
   const monthMap = new Map<
     string,
