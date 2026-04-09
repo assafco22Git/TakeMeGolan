@@ -53,7 +53,7 @@ const CustomTooltip = ({
   xMin,
 }: {
   active?: boolean;
-  payload?: { payload: { name: string; ranking: number; startMs: number; endMs: number; offset: number; duration: number } }[];
+  payload?: { payload: { name: string; ranking: number; startMs: number; endMs: number; offset: number; duration: number; status: string } }[];
   xMin: number;
 }) => {
   if (!active || !payload?.length) return null;
