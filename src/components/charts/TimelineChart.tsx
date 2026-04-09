@@ -71,8 +71,23 @@ const CustomTooltip = ({
   );
 };
 
+function useDarkMode() {
+  const [isDark, setIsDark] = useState(true);
+  useMemo(() => {
+    if (typeof document === "undefined") return;
+    setIsDark(document.documentElement.classList.contains("dark"));
+    const obs = new MutationObserver(() =>
+      setIsDark(document.documentElement.classList.contains("dark"))
+    );
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+  return isDark;
+}
+
 export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
   const [range, setRange] = useState<RangeKey>("All");
+  const isDark = useDarkMode();
 
   if (data.length === 0) {
     return (
@@ -154,7 +169,7 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
           <YAxis
             type="category"
             dataKey="name"
-            tick={{ fill: "#e2e8f0", fontSize: 13 }}
+            tick={{ fill: isDark ? "#e2e8f0" : "#0f172a", fontSize: 13, fontWeight: 600 }}
             axisLine={false}
             tickLine={false}
             width={60}

@@ -19,7 +19,7 @@ const updateGirlSchema = z.object({
   ranking: z.number().min(0).max(10).optional(),
   notes: z.string().max(2000).optional().nullable(),
   status: z.enum(["ACTIVE", "PAST"]).optional(),
-  matchedDate: z.string().datetime().optional().nullable(),
+  matchedDate: z.string().datetime().optional(),
   matchedApp: z.string().max(50).optional().nullable(),
   firstWhatsapp: z.string().datetime().optional().nullable(),
 });

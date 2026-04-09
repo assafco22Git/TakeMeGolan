@@ -14,12 +14,12 @@ const createGirlSchema = z.object({
   name: z.string().min(1).max(100),
   origin: z.string().max(100).optional().nullable(),
   occupation: z.string().max(100).optional().nullable(),
-  startDate: z.string().datetime(),
+  startDate: z.string().datetime().optional().nullable(),
   endDate: z.string().datetime().optional().nullable(),
   ranking: z.number().min(0).max(10),
   notes: z.string().max(2000).optional().nullable(),
   status: z.enum(["ACTIVE", "PAST"]).default("ACTIVE"),
-  matchedDate: z.string().datetime().optional().nullable(),
+  matchedDate: z.string().datetime(),
   matchedApp: z.string().max(50).optional().nullable(),
   firstWhatsapp: z.string().datetime().optional().nullable(),
 });
@@ -45,9 +45,9 @@ export async function POST(req: NextRequest) {
     const girl = await prisma.girl.create({
       data: {
         ...parsed.data,
-        startDate: new Date(parsed.data.startDate),
+        startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : new Date(parsed.data.matchedDate),
         endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : null,
-        matchedDate: parsed.data.matchedDate ? new Date(parsed.data.matchedDate) : null,
+        matchedDate: new Date(parsed.data.matchedDate),
         firstWhatsapp: parsed.data.firstWhatsapp ? new Date(parsed.data.firstWhatsapp) : null,
       },
     });

@@ -129,13 +129,12 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
         </div>
 
         <div>
-          <label className={labelClass}>Start Date *</label>
+          <label className={labelClass}>First Date</label>
           <input
             type="date"
             value={form.startDate}
             onChange={(e) => set("startDate", e.target.value)}
             className={inputClass}
-            required
           />
         </div>
 
@@ -161,12 +160,13 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
           )}
         </div>
         <div>
-          <label className={labelClass}>Matched Date</label>
+          <label className={labelClass}>Matched Date *</label>
           <input
             type="date"
             value={form.matchedDate}
             onChange={(e) => set("matchedDate", e.target.value)}
             className={inputClass}
+            required
           />
         </div>
 
@@ -182,6 +182,8 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
             <option value="Tinder">Tinder</option>
             <option value="OKCupid">OKCupid</option>
             <option value="Bumble">Bumble</option>
+            <option value="Matchmaking">Matchmaking</option>
+            <option value="Met her on my own">Met her on my own</option>
           </select>
         </div>
 
