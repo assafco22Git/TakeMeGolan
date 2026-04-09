@@ -80,7 +80,7 @@ const CustomTooltip = ({
   );
 };
 
-function CustomYTick({ x, y, payload, statusMap, isDark }: { x?: number; y?: number; payload?: { value: string }; statusMap: Map<string, string>; isDark: boolean }) {
+function CustomYTick({ x, y, payload, statusMap, isDark }: { x?: string | number; y?: string | number; payload?: { value: string }; statusMap: Map<string, string>; isDark: boolean }) {
   const isActive = statusMap.get(payload?.value ?? "") === "ACTIVE";
   const textColor = isDark ? "#e2e8f0" : "#0f172a";
   return (
