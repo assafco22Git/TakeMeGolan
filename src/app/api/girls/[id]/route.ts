@@ -1,0 +1,83 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
+import { z } from "zod";
+import type { Role } from "@/types";
+
+const updateGirlSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  origin: z.string().max(100).optional().nullable(),
+  occupation: z.string().max(100).optional().nullable(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional().nullable(),
+  ranking: z.number().int().min(1).max(10).optional(),
+  notes: z.string().max(2000).optional().nullable(),
+  status: z.enum(["ACTIVE", "PAST"]).optional(),
+});
+
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const girl = await prisma.girl.findUnique({ where: { id } });
+  if (!girl) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  return NextResponse.json(girl);
+}
+
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const body = await req.json();
+  const parsed = updateGirlSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const existing = await prisma.girl.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const data: Record<string, unknown> = { ...parsed.data };
+  if (parsed.data.startDate) data.startDate = new Date(parsed.data.startDate);
+  if (parsed.data.endDate !== undefined) {
+    data.endDate = parsed.data.endDate ? new Date(parsed.data.endDate) : null;
+  }
+
+  const girl = await prisma.girl.update({ where: { id }, data });
+  return NextResponse.json(girl);
+}
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const role = (session.user as { role: Role }).role;
+  if (role !== "OWNER") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { id } = await params;
+  const existing = await prisma.girl.findUnique({ where: { id } });
+  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  await prisma.girl.delete({ where: { id } });
+  return NextResponse.json({ success: true });
+}
