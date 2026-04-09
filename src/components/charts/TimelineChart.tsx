@@ -6,6 +6,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  ReferenceLine,
   ResponsiveContainer,
   Cell,
   Bar,
@@ -126,7 +127,7 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
             className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
               range === r
                 ? "bg-blue-600 text-white"
-                : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200"
             }`}
           >
             {r}
@@ -134,7 +135,7 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
         ))}
       </div>
 
-      <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 52 + 40)}>
+      <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 36 + 40)}>
         <ComposedChart
           layout="vertical"
           data={chartData}
@@ -159,8 +160,17 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
           />
           <Tooltip content={<CustomTooltip xMin={xMin} />} />
 
+          {/* Today reference line */}
+          <ReferenceLine
+            x={now - xMin}
+            stroke="#f59e0b"
+            strokeWidth={2}
+            strokeDasharray="4 3"
+            label={{ value: "Today", position: "top", fill: "#f59e0b", fontSize: 10, fontWeight: 600 }}
+          />
+
           {/* Invisible offset bar — pushes the visible bar to the right start position */}
-          <Bar dataKey="offset" stackId="timeline" fill="transparent" isAnimationActive={false} />
+          <Bar dataKey="offset" stackId="timeline" fill="transparent" isAnimationActive={false} barSize={12} />
 
           {/* Visible duration bar */}
           <Bar
@@ -169,6 +179,7 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
             radius={6}
             background={{ fill: "#1e293b", radius: 6 }}
             isAnimationActive={false}
+            barSize={12}
           >
             {chartData.map((entry) => (
               <Cell key={entry.id} fill={rankingColor(entry.ranking)} fillOpacity={0.85} />
