@@ -33,6 +33,8 @@ export default async function GirlDetailPage({ params }: { params: Promise<{ id:
             ...girl,
             startDate: girl.startDate.toISOString(),
             endDate: girl.endDate?.toISOString() ?? null,
+            matchedDate: girl.matchedDate?.toISOString() ?? null,
+            firstWhatsapp: girl.firstWhatsapp?.toISOString() ?? null,
             createdAt: girl.createdAt.toISOString(),
             updatedAt: girl.updatedAt.toISOString(),
             status: girl.status as "ACTIVE" | "PAST",
