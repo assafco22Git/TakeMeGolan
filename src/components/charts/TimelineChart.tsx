@@ -137,9 +137,10 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
 
       <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 36 + 40)}>
         <ComposedChart
+          key={range}
           layout="vertical"
           data={chartData}
-          margin={{ top: 8, right: 24, bottom: 8, left: 60 }}
+          margin={{ top: 28, right: 24, bottom: 8, left: 60 }}
         >
           <XAxis
             type="number"
@@ -166,7 +167,7 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
             stroke="#f59e0b"
             strokeWidth={2}
             strokeDasharray="4 3"
-            label={{ value: "Today", position: "top", fill: "#f59e0b", fontSize: 10, fontWeight: 600 }}
+            label={{ value: "Today", position: "insideTopRight", fill: "#f59e0b", fontSize: 10, fontWeight: 600 }}
           />
 
           {/* Invisible offset bar — pushes the visible bar to the right start position */}
