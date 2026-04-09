@@ -19,7 +19,12 @@ interface GirlRow {
 }
 
 async function getStats() {
-  const girls = (await prisma.girl.findMany({ orderBy: { startDate: "asc" } })) as GirlRow[];
+  let girls: GirlRow[] = [];
+  try {
+    girls = (await prisma.girl.findMany({ orderBy: { startDate: "asc" } })) as GirlRow[];
+  } catch {
+    return { timeline: [], leaderboard: [], distribution: [] };
+  }
 
   function dur(start: Date, end?: Date | null) {
     return Math.max(1, Math.floor(((end ?? new Date()).getTime() - start.getTime()) / 86400000));

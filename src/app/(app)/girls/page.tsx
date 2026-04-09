@@ -11,7 +11,10 @@ export default async function GirlsPage() {
   if (!role) redirect("/login");
 
   interface GirlRow { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date; endDate: Date | null; ranking: number; status: string; }
-  const girls = (await prisma.girl.findMany({ orderBy: { startDate: "desc" } })) as GirlRow[];
+  let girls: GirlRow[] = [];
+  try {
+    girls = (await prisma.girl.findMany({ orderBy: { startDate: "desc" } })) as GirlRow[];
+  } catch { /* DB not ready yet */ }
 
   const active = girls.filter((g) => g.status === "ACTIVE");
   const past = girls.filter((g) => g.status === "PAST");
