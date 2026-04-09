@@ -24,7 +24,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
     occupation: initial?.occupation || "",
     startDate: initial?.startDate ? initial.startDate.slice(0, 10) : "",
     endDate: initial?.endDate ? initial.endDate.slice(0, 10) : "",
-    ranking: initial?.ranking?.toString() || "5.5",
+    ranking: initial?.ranking?.toString() || "5",
     notes: initial?.notes || "",
     status: initial?.status || "ACTIVE",
   });
@@ -175,7 +175,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
         </label>
         <input
           type="range"
-          min={1}
+          min={0}
           max={10}
           step={0.1}
           value={form.ranking}
@@ -183,8 +183,8 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
           className="w-full accent-blue-500"
         />
         <div className="flex justify-between text-xs text-slate-500 mt-1">
-          <span>1</span>
-          <span>5.5</span>
+          <span>0</span>
+          <span>5</span>
           <span>10</span>
         </div>
       </div>

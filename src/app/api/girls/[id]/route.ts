@@ -16,7 +16,7 @@ const updateGirlSchema = z.object({
   occupation: z.string().max(100).optional().nullable(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional().nullable(),
-  ranking: z.number().min(1).max(10).optional(),
+  ranking: z.number().min(0).max(10).optional(),
   notes: z.string().max(2000).optional().nullable(),
   status: z.enum(["ACTIVE", "PAST"]).optional(),
 });
