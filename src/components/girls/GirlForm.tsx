@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { Girl } from "@/types";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
+import { MicButton } from "@/components/ui/MicButton";
 
 interface GirlFormProps {
   initial?: Partial<Girl>;
@@ -15,6 +17,11 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const handleSpeechResult = useCallback((field: string, text: string) => {
+    setForm((prev) => ({ ...prev, [field]: text }));
+  }, []);
+  const { listeningField, startListening } = useSpeechToText(handleSpeechResult);
 
   const isOngoing = !initial?.endDate;
   const [ongoing, setOngoing] = useState(isOngoing);
@@ -86,6 +93,7 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
 
   const inputClass =
     `w-full bg-slate-50 dark:bg-[#0a0f1e] border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm${readOnly ? " opacity-70 cursor-default" : ""}`;
+  const micInputClass = inputClass + " pr-10";
   const labelClass = "block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5";
 
   return (
@@ -107,51 +115,63 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
           <label className={labelClass}>Name *</label>
-          <input
-            type="text"
-            value={form.name}
-            onChange={(e) => set("name", e.target.value)}
-            className={inputClass}
-            placeholder="Her name"
-            required={!readOnly}
-            disabled={readOnly}
-          />
+          <div className="relative">
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
+              className={micInputClass}
+              placeholder="Her name"
+              required={!readOnly}
+              disabled={readOnly}
+            />
+            {!readOnly && <MicButton active={listeningField === "name"} onClick={() => startListening("name")} />}
+          </div>
         </div>
 
         <div>
           <label className={labelClass}>Origin</label>
-          <input
-            type="text"
-            value={form.origin}
-            onChange={(e) => set("origin", e.target.value)}
-            className={inputClass}
-            placeholder="e.g. Tel Aviv, New York"
-            disabled={readOnly}
-          />
+          <div className="relative">
+            <input
+              type="text"
+              value={form.origin}
+              onChange={(e) => set("origin", e.target.value)}
+              className={micInputClass}
+              placeholder="e.g. Tel Aviv, New York"
+              disabled={readOnly}
+            />
+            {!readOnly && <MicButton active={listeningField === "origin"} onClick={() => startListening("origin")} />}
+          </div>
         </div>
 
         <div>
           <label className={labelClass}>Current City</label>
-          <input
-            type="text"
-            value={form.hometown}
-            onChange={(e) => set("hometown", e.target.value)}
-            className={inputClass}
-            placeholder="e.g. Tel Aviv, Berlin"
-            disabled={readOnly}
-          />
+          <div className="relative">
+            <input
+              type="text"
+              value={form.hometown}
+              onChange={(e) => set("hometown", e.target.value)}
+              className={micInputClass}
+              placeholder="e.g. Tel Aviv, Berlin"
+              disabled={readOnly}
+            />
+            {!readOnly && <MicButton active={listeningField === "hometown"} onClick={() => startListening("hometown")} />}
+          </div>
         </div>
 
         <div className="sm:col-span-2">
           <label className={labelClass}>Occupation</label>
-          <input
-            type="text"
-            value={form.occupation}
-            onChange={(e) => set("occupation", e.target.value)}
-            className={inputClass}
-            placeholder="e.g. Designer, Engineer"
-            disabled={readOnly}
-          />
+          <div className="relative">
+            <input
+              type="text"
+              value={form.occupation}
+              onChange={(e) => set("occupation", e.target.value)}
+              className={micInputClass}
+              placeholder="e.g. Designer, Engineer"
+              disabled={readOnly}
+            />
+            {!readOnly && <MicButton active={listeningField === "occupation"} onClick={() => startListening("occupation")} />}
+          </div>
         </div>
 
         <div>
@@ -252,14 +272,17 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
 
       <div>
         <label className={labelClass}>Notes</label>
-        <textarea
-          value={form.notes}
-          onChange={(e) => set("notes", e.target.value)}
-          className={inputClass}
-          rows={3}
-          placeholder="Any thoughts..."
-          disabled={readOnly}
-        />
+        <div className="relative">
+          <textarea
+            value={form.notes}
+            onChange={(e) => set("notes", e.target.value)}
+            className={micInputClass}
+            rows={3}
+            placeholder="Any thoughts..."
+            disabled={readOnly}
+          />
+          {!readOnly && <MicButton active={listeningField === "notes"} onClick={() => startListening("notes")} forTextarea />}
+        </div>
       </div>
 
       {!readOnly && (
