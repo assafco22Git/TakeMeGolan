@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { cookies } from "next/headers";
 import { ROLE_COOKIE } from "@/lib/role";
 
@@ -8,8 +8,6 @@ async function getRole() {
   const val = store.get(ROLE_COOKIE)?.value;
   return val === "OWNER" || val === "ADMIN" ? val : null;
 }
-
-const client = new Anthropic();
 
 export async function POST(req: NextRequest) {
   const role = await getRole();
@@ -21,15 +19,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing transcript" }, { status: 400 });
   }
 
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 });
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
   const today = new Date().toISOString().slice(0, 10);
 
-  const message = await client.messages.create({
-    model: "claude-opus-4-5",
-    max_tokens: 1024,
-    messages: [
-      {
-        role: "user",
-        content: `You are helping fill in a dating tracker form. Extract the following fields from this spoken description and return ONLY a valid JSON object. Today's date is ${today}.
+  const prompt = `You are helping fill in a dating tracker form. Extract the following fields from this spoken description and return ONLY a valid JSON object. Today's date is ${today}.
 
 Fields to extract:
 - name (string, required) — her first name
@@ -46,12 +44,10 @@ Fields to extract:
 
 Return ONLY the JSON object, no explanation. If a field is not mentioned, use null (or 5 for ranking).
 
-Spoken description: "${transcript}"`,
-      },
-    ],
-  });
+Spoken description: "${transcript}"`;
 
-  const raw = message.content[0].type === "text" ? message.content[0].text.trim() : "";
+  const result = await model.generateContent(prompt);
+  const raw = result.response.text().trim();
 
   // Strip markdown code fences if present
   const json = raw.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
