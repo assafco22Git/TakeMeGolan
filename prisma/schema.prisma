@@ -35,12 +35,13 @@ model Girl {
 }
 
 model Comment {
-  id        String   @id @default(cuid())
-  girlId    String
-  girl      Girl     @relation(fields: [girlId], references: [id], onDelete: Cascade)
-  role      String   // "OWNER" or "ADMIN"
-  text      String
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  girlId      String
+  girl        Girl     @relation(fields: [girlId], references: [id], onDelete: Cascade)
+  role        String   // "OWNER" or "ADMIN"
+  authorName  String?
+  text        String
+  createdAt   DateTime @default(now())
 }
 
 enum Role {

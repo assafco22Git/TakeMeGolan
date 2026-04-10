@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 interface Comment {
   id: string;
   role: string;
+  authorName: string | null;
   text: string;
   createdAt: string;
 }
@@ -13,6 +14,8 @@ interface Props {
   girlId: string;
   currentRole: string;
 }
+
+const NAME_KEY = "comment_author_name";
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleString("en-US", {
@@ -24,8 +27,14 @@ function formatTime(iso: string) {
 export default function CommentsSection({ girlId, currentRole }: Props) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [text, setText] = useState("");
+  const [authorName, setAuthorName] = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Load saved name from localStorage
+  useEffect(() => {
+    setAuthorName(localStorage.getItem(NAME_KEY) ?? "");
+  }, []);
 
   useEffect(() => {
     fetch(`/api/girls/${girlId}/comments`)
@@ -38,6 +47,11 @@ export default function CommentsSection({ girlId, currentRole }: Props) {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [comments]);
 
+  function saveName(name: string) {
+    setAuthorName(name);
+    localStorage.setItem(NAME_KEY, name);
+  }
+
   async function send() {
     if (!text.trim() || sending) return;
     setSending(true);
@@ -45,7 +59,7 @@ export default function CommentsSection({ girlId, currentRole }: Props) {
       const res = await fetch(`/api/girls/${girlId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, authorName }),
       });
       const comment = await res.json();
       setComments((prev) => [...prev, comment]);
@@ -62,7 +76,9 @@ export default function CommentsSection({ girlId, currentRole }: Props) {
     }
   }
 
-  const isOwner = (role: string) => role === "OWNER";
+  function displayName(c: Comment) {
+    return c.authorName || (c.role === "OWNER" ? "Golan" : "Friend");
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -85,7 +101,7 @@ export default function CommentsSection({ girlId, currentRole }: Props) {
                 {c.text}
               </div>
               <span className="text-xs text-slate-400 px-1">
-                {isOwner(c.role) ? "Golan" : "Friend"} · {formatTime(c.createdAt)}
+                {displayName(c)} · {formatTime(c.createdAt)}
               </span>
             </div>
           );
@@ -93,23 +109,32 @@ export default function CommentsSection({ girlId, currentRole }: Props) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="flex gap-2 items-end">
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={onKeyDown}
-          rows={1}
-          placeholder="Write a comment… (Enter to send)"
-          className="flex-1 resize-none bg-slate-50 dark:bg-[#0a0f1e] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+      {/* Name + message input */}
+      <div className="flex flex-col gap-2">
+        <input
+          type="text"
+          value={authorName}
+          onChange={(e) => saveName(e.target.value)}
+          placeholder="Your name (optional)"
+          className="w-48 bg-slate-50 dark:bg-[#0a0f1e] border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
         />
-        <button
-          onClick={send}
-          disabled={!text.trim() || sending}
-          className="flex-shrink-0 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors"
-        >
-          Send
-        </button>
+        <div className="flex gap-2 items-end">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={onKeyDown}
+            rows={1}
+            placeholder="Write a comment… (Enter to send)"
+            className="flex-1 resize-none bg-slate-50 dark:bg-[#0a0f1e] border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+          />
+          <button
+            onClick={send}
+            disabled={!text.trim() || sending}
+            className="flex-shrink-0 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors"
+          >
+            Send
+          </button>
+        </div>
       </div>
     </div>
   );

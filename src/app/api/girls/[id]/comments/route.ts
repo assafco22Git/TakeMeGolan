@@ -26,11 +26,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!role) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-  const { text } = await req.json();
+  const { text, authorName } = await req.json();
   if (!text?.trim()) return NextResponse.json({ error: "Empty comment" }, { status: 400 });
 
   const comment = await prisma.comment.create({
-    data: { girlId: id, role, text: text.trim() },
+    data: { girlId: id, role, text: text.trim(), authorName: authorName?.trim() || null },
   });
   return NextResponse.json(comment);
 }
