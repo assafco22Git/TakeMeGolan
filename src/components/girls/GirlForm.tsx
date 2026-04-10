@@ -18,10 +18,12 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [speechLang, setSpeechLang] = useState<"he-IL" | "en-US">("he-IL");
+
   const handleSpeechResult = useCallback((field: string, text: string) => {
     setForm((prev) => ({ ...prev, [field]: text }));
   }, []);
-  const { listeningField, startListening } = useSpeechToText(handleSpeechResult);
+  const { listeningField, startListening } = useSpeechToText(handleSpeechResult, speechLang);
 
   const isOngoing = !initial?.endDate;
   const [ongoing, setOngoing] = useState(isOngoing);
@@ -110,6 +112,28 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
         <p className="text-red-400 text-sm bg-red-900/20 border border-red-800 rounded-xl px-4 py-3">
           {error}
         </p>
+      )}
+
+      {!readOnly && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500 dark:text-slate-400">🎤 Voice language:</span>
+          <div className="flex rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 text-xs font-medium">
+            {(["he-IL", "en-US"] as const).map((lang) => (
+              <button
+                key={lang}
+                type="button"
+                onClick={() => setSpeechLang(lang)}
+                className={`px-3 py-1.5 transition-colors ${
+                  speechLang === lang
+                    ? "bg-blue-600 text-white"
+                    : "bg-white dark:bg-[#0a0f1e] text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                }`}
+              >
+                {lang === "he-IL" ? "🇮🇱 Hebrew" : "🇬🇧 English"}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

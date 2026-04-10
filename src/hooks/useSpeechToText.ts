@@ -25,7 +25,7 @@ interface ISpeechRecognitionEvent {
   results: { [index: number]: { [index: number]: { transcript: string } } };
 }
 
-export function useSpeechToText(onResult: (field: string, text: string) => void) {
+export function useSpeechToText(onResult: (field: string, text: string) => void, lang = "he-IL") {
   const [listeningField, setListeningField] = useState<string | null>(null);
   const recRef = useRef<ISpeechRecognition | null>(null);
 
@@ -55,7 +55,7 @@ export function useSpeechToText(onResult: (field: string, text: string) => void)
       }
 
       const rec = new SR();
-      rec.lang = "he-IL"; // Hebrew — change to "en-US" for English only
+      rec.lang = lang;
       rec.interimResults = false;
       rec.maxAlternatives = 1;
 
@@ -77,7 +77,7 @@ export function useSpeechToText(onResult: (field: string, text: string) => void)
       recRef.current = rec;
       setListeningField(field);
     },
-    [listeningField, onResult]
+    [listeningField, onResult, lang]
   );
 
   return { listeningField, startListening };
