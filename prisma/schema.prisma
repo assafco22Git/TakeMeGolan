@@ -21,7 +21,7 @@ model Girl {
   origin     String?
   hometown   String?
   occupation String?
-  startDate  DateTime
+  startDate  DateTime?
   endDate    DateTime?
   ranking       Float
   notes         String?

@@ -10,7 +10,7 @@ export default async function GirlsPage() {
   const role = await getRole();
   if (!role) redirect("/login");
 
-  interface GirlRow { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date; endDate: Date | null; ranking: number; status: string; }
+  interface GirlRow { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date | null; endDate: Date | null; ranking: number; status: string; }
   let girls: GirlRow[] = [];
   try {
     girls = (await prisma.girl.findMany({ orderBy: { startDate: "desc" } })) as GirlRow[];
@@ -69,9 +69,10 @@ export default async function GirlsPage() {
   );
 }
 
-function GirlCard({ girl }: { girl: { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date; endDate: Date | null; ranking: number; status: string } }) {
-  const days = durationInDays(girl.startDate, girl.endDate);
+function GirlCard({ girl }: { girl: { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date | null; endDate: Date | null; ranking: number; status: string } }) {
+  const days = durationInDays(girl.startDate ?? new Date(), girl.endDate);
   const color = rankingColor(girl.ranking);
+  const noFirstDate = !girl.startDate || girl.startDate > new Date();
 
   return (
     <Link href={`/girls/${girl.id}`}>
@@ -83,6 +84,7 @@ function GirlCard({ girl }: { girl: { id: string; name: string; origin: string |
           <div className="flex items-center gap-2">
             <p className="font-semibold text-slate-900 dark:text-white truncate">{girl.name}</p>
             {girl.status === "ACTIVE" && <span className="flex-shrink-0 w-2 h-2 rounded-full bg-green-400" />}
+            {noFirstDate && <span className="flex-shrink-0 text-base" title="No first date yet">🚩</span>}
           </div>
           <p className="text-slate-500 text-sm truncate">
             {[girl.origin, girl.occupation].filter(Boolean).join(" · ") || "No details"}
@@ -90,7 +92,7 @@ function GirlCard({ girl }: { girl: { id: string; name: string; origin: string |
         </div>
         <div className="flex-shrink-0 text-right">
           <p className="text-slate-700 dark:text-slate-300 text-sm font-medium">{days}d</p>
-          <p className="text-slate-500 text-xs">{formatDate(girl.startDate)}</p>
+          <p className="text-slate-500 text-xs">{girl.startDate ? formatDate(girl.startDate) : "—"}</p>
         </div>
       </div>
     </Link>

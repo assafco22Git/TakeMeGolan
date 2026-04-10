@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     const girl = await prisma.girl.create({
       data: {
         ...parsed.data,
-        startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : new Date(parsed.data.matchedDate),
+        startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : null,
         endDate: parsed.data.endDate ? new Date(parsed.data.endDate) : null,
         matchedDate: new Date(parsed.data.matchedDate),
         firstWhatsapp: parsed.data.firstWhatsapp ? new Date(parsed.data.firstWhatsapp) : null,

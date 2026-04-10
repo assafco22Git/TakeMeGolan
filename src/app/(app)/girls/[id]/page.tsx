@@ -20,7 +20,7 @@ export default async function GirlDetailPage({ params }: { params: Promise<{ id:
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{girl.name}</h1>
           <p className="text-slate-500 text-sm mt-1">
-            {formatDate(girl.startDate)} – {formatDate(girl.endDate)}
+            {girl.startDate ? formatDate(girl.startDate) : "—"} – {formatDate(girl.endDate)}
           </p>
         </div>
         {role === "OWNER" && <DeleteButton girlId={id} />}
@@ -29,9 +29,10 @@ export default async function GirlDetailPage({ params }: { params: Promise<{ id:
         <GirlForm
           mode="edit"
           girlId={id}
+          readOnly={role !== "OWNER"}
           initial={{
             ...girl,
-            startDate: girl.startDate.toISOString(),
+            startDate: girl.startDate?.toISOString() ?? null,
             endDate: girl.endDate?.toISOString() ?? null,
             matchedDate: girl.matchedDate?.toISOString() ?? null,
             firstWhatsapp: girl.firstWhatsapp?.toISOString() ?? null,

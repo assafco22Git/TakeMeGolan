@@ -8,9 +8,10 @@ interface GirlFormProps {
   initial?: Partial<Girl>;
   girlId?: string;
   mode: "create" | "edit";
+  readOnly?: boolean;
 }
 
-export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
+export default function GirlForm({ initial, girlId, mode, readOnly = false }: GirlFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -23,7 +24,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
     origin: initial?.origin || "",
     hometown: initial?.hometown || "",
     occupation: initial?.occupation || "",
-    startDate: initial?.startDate ? initial.startDate.slice(0, 10) : "",
+    startDate: initial?.startDate ? (initial.startDate as string).slice(0, 10) : "",
     endDate: initial?.endDate ? initial.endDate.slice(0, 10) : "",
     ranking: initial?.ranking?.toString() || "5",
     notes: initial?.notes || "",
@@ -84,11 +85,19 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
   }
 
   const inputClass =
-    "w-full bg-slate-50 dark:bg-[#0a0f1e] border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm";
+    `w-full bg-slate-50 dark:bg-[#0a0f1e] border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm${readOnly ? " opacity-70 cursor-default" : ""}`;
   const labelClass = "block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {readOnly && (
+        <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          View only — switch to Golan to make changes
+        </div>
+      )}
       {error && (
         <p className="text-red-400 text-sm bg-red-900/20 border border-red-800 rounded-xl px-4 py-3">
           {error}
@@ -104,7 +113,8 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
             onChange={(e) => set("name", e.target.value)}
             className={inputClass}
             placeholder="Her name"
-            required
+            required={!readOnly}
+            disabled={readOnly}
           />
         </div>
 
@@ -116,6 +126,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
             onChange={(e) => set("origin", e.target.value)}
             className={inputClass}
             placeholder="e.g. Tel Aviv, New York"
+            disabled={readOnly}
           />
         </div>
 
@@ -127,6 +138,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
             onChange={(e) => set("hometown", e.target.value)}
             className={inputClass}
             placeholder="e.g. Tel Aviv, Berlin"
+            disabled={readOnly}
           />
         </div>
 
@@ -138,6 +150,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
             onChange={(e) => set("occupation", e.target.value)}
             className={inputClass}
             placeholder="e.g. Designer, Engineer"
+            disabled={readOnly}
           />
         </div>
 
@@ -148,6 +161,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
             value={form.startDate}
             onChange={(e) => set("startDate", e.target.value)}
             className={inputClass}
+            disabled={readOnly}
           />
         </div>
 
@@ -156,7 +170,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
           {/* Still ongoing toggle */}
           <label className="flex items-center gap-2 mb-2 cursor-pointer w-fit">
             <div
-              onClick={() => setOngoing((v) => !v)}
+              onClick={() => !readOnly && setOngoing((v) => !v)}
               className={`w-9 h-5 rounded-full transition-colors flex items-center px-0.5 ${ongoing ? "bg-green-500" : "bg-slate-700"}`}
             >
               <div className={`w-4 h-4 rounded-full bg-white transition-transform ${ongoing ? "translate-x-4" : "translate-x-0"}`} />
@@ -169,6 +183,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
               value={form.endDate}
               onChange={(e) => set("endDate", e.target.value)}
               className={inputClass}
+              disabled={readOnly}
             />
           )}
         </div>
@@ -179,7 +194,8 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
             value={form.matchedDate}
             onChange={(e) => set("matchedDate", e.target.value)}
             className={inputClass}
-            required
+            required={!readOnly}
+            disabled={readOnly}
           />
         </div>
 
@@ -189,6 +205,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
             value={form.matchedApp}
             onChange={(e) => set("matchedApp", e.target.value)}
             className={inputClass}
+            disabled={readOnly}
           >
             <option value="">— select app —</option>
             <option value="Hinge">Hinge</option>
@@ -207,6 +224,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
             value={form.firstWhatsapp}
             onChange={(e) => set("firstWhatsapp", e.target.value)}
             className={inputClass}
+            disabled={readOnly}
           />
         </div>
       </div>
@@ -223,6 +241,7 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
           value={form.ranking}
           onChange={(e) => set("ranking", e.target.value)}
           className="w-full accent-blue-500"
+          disabled={readOnly}
         />
         <div className="flex justify-between text-xs text-slate-500 mt-1">
           <span>0</span>
@@ -239,25 +258,28 @@ export default function GirlForm({ initial, girlId, mode }: GirlFormProps) {
           className={inputClass}
           rows={3}
           placeholder="Any thoughts..."
+          disabled={readOnly}
         />
       </div>
 
-      <div className="flex gap-3 pt-2">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="flex-1 py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm font-medium"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-semibold transition-colors text-sm"
-        >
-          {loading ? "Saving..." : mode === "create" ? "Add Girl" : "Save Changes"}
-        </button>
-      </div>
+      {!readOnly && (
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="flex-1 py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm font-medium"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-semibold transition-colors text-sm"
+          >
+            {loading ? "Saving..." : mode === "create" ? "Add Girl" : "Save Changes"}
+          </button>
+        </div>
+      )}
     </form>
   );
 }
