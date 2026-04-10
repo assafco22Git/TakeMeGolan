@@ -19,11 +19,80 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
   const [error, setError] = useState("");
 
   const [speechLang, setSpeechLang] = useState<"he-IL" | "en-US">("he-IL");
+  const [filling, setFilling] = useState(false); // whole-form mic active
+  const [fillStatus, setFillStatus] = useState(""); // status message
 
   const handleSpeechResult = useCallback((field: string, text: string) => {
     setForm((prev) => ({ ...prev, [field]: text }));
   }, []);
   const { listeningField, startListening } = useSpeechToText(handleSpeechResult, speechLang);
+
+  // Whole-form fill via AI
+  const handleFillByVoice = useCallback(() => {
+    const SR =
+      typeof window !== "undefined"
+        ? (window.SpeechRecognition ?? window.webkitSpeechRecognition)
+        : null;
+
+    if (!SR) {
+      alert("Speech recognition is not supported in this browser. Try Chrome or Safari.");
+      return;
+    }
+
+    const rec = new SR();
+    rec.lang = speechLang;
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+
+    setFilling(true);
+    setFillStatus("Listening… speak now");
+
+    rec.onresult = async (e: SpeechRecognitionEvent) => {
+      const transcript = e.results[0][0].transcript;
+      setFillStatus("Thinking…");
+      try {
+        const res = await fetch("/api/parse-girl", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ transcript }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Parse failed");
+
+        setForm((prev) => ({
+          ...prev,
+          name: data.name ?? prev.name,
+          origin: data.origin ?? prev.origin,
+          hometown: data.hometown ?? prev.hometown,
+          occupation: data.occupation ?? prev.occupation,
+          ranking: data.ranking != null ? String(data.ranking) : prev.ranking,
+          matchedApp: data.matchedApp ?? prev.matchedApp,
+          matchedDate: data.matchedDate ?? prev.matchedDate,
+          startDate: data.startDate ?? prev.startDate,
+          endDate: data.endDate ?? prev.endDate,
+          firstWhatsapp: data.firstWhatsapp ?? prev.firstWhatsapp,
+          notes: data.notes ?? prev.notes,
+        }));
+        if (data.endDate) setOngoing(false);
+        setFillStatus("✓ Form filled!");
+      } catch (err) {
+        setFillStatus("Error: " + (err instanceof Error ? err.message : "Unknown"));
+      } finally {
+        setFilling(false);
+      }
+    };
+
+    rec.onerror = () => {
+      setFilling(false);
+      setFillStatus("Mic error — try again");
+    };
+
+    rec.onend = () => {
+      if (filling) setFilling(false);
+    };
+
+    rec.start();
+  }, [speechLang, filling]);
 
   const isOngoing = !initial?.endDate;
   const [ongoing, setOngoing] = useState(isOngoing);
@@ -115,24 +184,47 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
       )}
 
       {!readOnly && (
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 dark:text-slate-400">🎤 Voice language:</span>
-          <div className="flex rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 text-xs font-medium">
-            {(["he-IL", "en-US"] as const).map((lang) => (
-              <button
-                key={lang}
-                type="button"
-                onClick={() => setSpeechLang(lang)}
-                className={`px-3 py-1.5 transition-colors ${
-                  speechLang === lang
-                    ? "bg-blue-600 text-white"
-                    : "bg-white dark:bg-[#0a0f1e] text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                }`}
-              >
-                {lang === "he-IL" ? "🇮🇱 Hebrew" : "🇬🇧 English"}
-              </button>
-            ))}
+        <div className="space-y-3">
+          {/* Language toggle */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500 dark:text-slate-400">🎤 Voice language:</span>
+            <div className="flex rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 text-xs font-medium">
+              {(["he-IL", "en-US"] as const).map((lang) => (
+                <button
+                  key={lang}
+                  type="button"
+                  onClick={() => setSpeechLang(lang)}
+                  className={`px-3 py-1.5 transition-colors ${
+                    speechLang === lang
+                      ? "bg-blue-600 text-white"
+                      : "bg-white dark:bg-[#0a0f1e] text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  {lang === "he-IL" ? "🇮🇱 Hebrew" : "🇬🇧 English"}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* Fill entire form by voice */}
+          <button
+            type="button"
+            onClick={handleFillByVoice}
+            disabled={filling}
+            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed text-sm font-medium transition-all
+              ${filling
+                ? "border-red-400 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 animate-pulse cursor-not-allowed"
+                : "border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 1a3 3 0 0 1 3 3v8a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 10v1a7 7 0 0 1-14 0v-1" />
+              <line x1="12" y1="19" x2="12" y2="23" strokeLinecap="round" />
+              <line x1="8" y1="23" x2="16" y2="23" strokeLinecap="round" />
+            </svg>
+            {filling ? fillStatus : fillStatus.startsWith("✓") ? fillStatus : "Fill entire form by voice"}
+          </button>
         </div>
       )}
 
