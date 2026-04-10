@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import GirlForm from "@/components/girls/GirlForm";
 import DeleteButton from "@/components/girls/DeleteButton";
+import CommentsSection from "@/components/girls/CommentsSection";
 import { formatDate } from "@/lib/utils";
 
 export default async function GirlDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -41,6 +42,11 @@ export default async function GirlDetailPage({ params }: { params: Promise<{ id:
             status: girl.status as "ACTIVE" | "PAST",
           }}
         />
+      </div>
+
+      <div className="bg-white dark:bg-[#111827] rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
+        <h2 className="text-slate-900 dark:text-white font-semibold mb-4">Comments</h2>
+        <CommentsSection girlId={id} currentRole={role} />
       </div>
     </div>
   );
