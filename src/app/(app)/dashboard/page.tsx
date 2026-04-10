@@ -43,6 +43,7 @@ async function getStats() {
     endMs: (g.endDate ?? new Date()).getTime(),
     ranking: g.ranking,
     status: g.status as "ACTIVE" | "PAST",
+    hasFirstDate: g.startDate !== null,
   }));
 
   const leaderboard = [...girls]
@@ -55,6 +56,7 @@ async function getStats() {
       ranking: g.ranking,
       durationDays: dur(g.startDate, g.endDate),
       status: g.status as "ACTIVE" | "PAST",
+      hasFirstDate: g.startDate !== null,
     }));
 
   const originMap = new Map<string, { count: number; total: number }>();

@@ -35,6 +35,7 @@ export async function GET(req: NextRequest) {
     startMs: effectiveStart(g).getTime(),
     endMs: (g.endDate ?? new Date()).getTime(),
     ranking: g.ranking, status: g.status as "ACTIVE" | "PAST",
+    hasFirstDate: g.startDate !== null,
   }));
 
   const leaderboard: LeaderboardEntry[] = [...girls]
@@ -43,6 +44,7 @@ export async function GET(req: NextRequest) {
       id: g.id, name: g.name, origin: g.origin, occupation: g.occupation,
       ranking: g.ranking, durationDays: durationDays(g.startDate ?? g.matchedDate ?? new Date(), g.endDate),
       status: g.status as "ACTIVE" | "PAST",
+      hasFirstDate: g.startDate !== null,
     }));
 
   const distMap = new Map<string, { count: number; total: number }>();

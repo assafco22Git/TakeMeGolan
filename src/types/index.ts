@@ -32,6 +32,7 @@ export interface TimelineEntry {
   endMs: number;
   ranking: number;
   status: Status;
+  hasFirstDate: boolean;
 }
 
 export interface LeaderboardEntry {
@@ -42,6 +43,7 @@ export interface LeaderboardEntry {
   ranking: number;
   durationDays: number;
   status: Status;
+  hasFirstDate: boolean;
 }
 
 export interface DistributionEntry {

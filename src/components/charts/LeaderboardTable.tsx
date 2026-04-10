@@ -48,12 +48,17 @@ export default function LeaderboardTable({ data }: Props) {
                 {i < 3 ? medals[i] : <span className="text-slate-500 text-sm">{i + 1}</span>}
               </td>
               <td className="py-3 px-3">
-                <Link href={`/girls/${entry.id}`} className="font-semibold text-white hover:text-blue-400 transition-colors">
-                  {entry.name}
-                </Link>
-                {entry.status === "ACTIVE" && (
-                  <span className="ml-2 inline-block w-2 h-2 rounded-full bg-green-400 align-middle" />
-                )}
+                <div className="flex items-center gap-1.5">
+                  <Link href={`/girls/${entry.id}`} className="font-semibold text-slate-900 dark:text-white hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
+                    {entry.name}
+                  </Link>
+                  {entry.status === "ACTIVE" && (
+                    <span className="inline-block w-2 h-2 rounded-full bg-green-400 flex-shrink-0" />
+                  )}
+                  {!entry.hasFirstDate && (
+                    <span title="No first date yet" className="flex-shrink-0">🚩</span>
+                  )}
+                </div>
               </td>
               <td className="py-3 px-3 text-slate-400 hidden sm:table-cell">
                 {entry.origin || "—"}
