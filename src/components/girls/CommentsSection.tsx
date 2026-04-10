@@ -17,6 +17,23 @@ interface Props {
 
 const NAME_KEY = "comment_author_name";
 
+const BUBBLE_COLORS = [
+  "#2563eb", // blue
+  "#7c3aed", // violet
+  "#db2777", // pink
+  "#059669", // emerald
+  "#d97706", // amber
+  "#dc2626", // red
+  "#0891b2", // cyan
+  "#65a30d", // lime
+];
+
+function bubbleColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return BUBBLE_COLORS[Math.abs(hash) % BUBBLE_COLORS.length];
+}
+
 function formatTime(iso: string) {
   return new Date(iso).toLocaleString("en-US", {
     month: "short", day: "numeric",
@@ -89,14 +106,17 @@ export default function CommentsSection({ girlId, currentRole }: Props) {
         )}
         {comments.map((c) => {
           const mine = c.role === currentRole;
+          const name = displayName(c);
+          const color = bubbleColor(name);
           return (
             <div key={c.id} className={`flex flex-col gap-0.5 ${mine ? "items-end" : "items-start"}`}>
               <div
-                className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed
-                  ${mine
-                    ? "bg-blue-600 text-white rounded-br-sm"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-sm"
-                  }`}
+                className="max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed text-white"
+                style={{
+                  backgroundColor: color,
+                  borderBottomRightRadius: mine ? 4 : undefined,
+                  borderBottomLeftRadius: mine ? undefined : 4,
+                }}
               >
                 {c.text}
               </div>
