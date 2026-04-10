@@ -12,8 +12,9 @@ interface GirlRow {
   name: string;
   origin: string | null;
   occupation: string | null;
-  startDate: Date;
+  startDate: Date | null;
   endDate: Date | null;
+  matchedDate: Date | null;
   ranking: number;
   status: string;
 }
@@ -21,19 +22,24 @@ interface GirlRow {
 async function getStats() {
   let girls: GirlRow[] = [];
   try {
-    girls = (await prisma.girl.findMany({ orderBy: { startDate: "asc" } })) as GirlRow[];
+    girls = (await prisma.girl.findMany({ orderBy: { matchedDate: "asc" } })) as GirlRow[];
   } catch {
     return { timeline: [], leaderboard: [], distribution: [] };
   }
 
-  function dur(start: Date, end?: Date | null) {
-    return Math.max(1, Math.floor(((end ?? new Date()).getTime() - start.getTime()) / 86400000));
+  function dur(start: Date | null, end?: Date | null) {
+    const s = start ?? new Date();
+    return Math.max(1, Math.floor(((end ?? new Date()).getTime() - s.getTime()) / 86400000));
+  }
+
+  function effectiveStart(g: GirlRow): Date {
+    return g.startDate ?? g.matchedDate ?? new Date();
   }
 
   const timeline = girls.map((g) => ({
     id: g.id,
     name: g.name,
-    startMs: g.startDate.getTime(),
+    startMs: effectiveStart(g).getTime(),
     endMs: (g.endDate ?? new Date()).getTime(),
     ranking: g.ranking,
     status: g.status as "ACTIVE" | "PAST",

@@ -32,7 +32,7 @@ export default async function GirlDetailPage({ params }: { params: Promise<{ id:
           readOnly={role !== "OWNER"}
           initial={{
             ...girl,
-            startDate: girl.startDate?.toISOString() ?? null,
+            startDate: girl.startDate?.toISOString() ?? undefined,
             endDate: girl.endDate?.toISOString() ?? null,
             matchedDate: girl.matchedDate?.toISOString() ?? null,
             firstWhatsapp: girl.firstWhatsapp?.toISOString() ?? null,

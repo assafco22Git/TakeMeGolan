@@ -7,7 +7,7 @@ export interface Girl {
   origin: string | null;
   hometown: string | null;
   occupation: string | null;
-  startDate: string;
+  startDate: string | null;
   endDate: string | null;
   ranking: number;
   notes: string | null;

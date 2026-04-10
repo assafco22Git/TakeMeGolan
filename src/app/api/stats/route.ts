@@ -10,8 +10,9 @@ async function getRole() {
   return val === "OWNER" || val === "ADMIN" ? val : null;
 }
 
-function durationDays(start: Date, end?: Date | null): number {
-  return Math.max(1, Math.floor(((end ?? new Date()).getTime() - start.getTime()) / 86400000));
+function durationDays(start: Date | null, end?: Date | null): number {
+  const s = start ?? new Date();
+  return Math.max(1, Math.floor(((end ?? new Date()).getTime() - s.getTime()) / 86400000));
 }
 
 export async function GET(req: NextRequest) {
@@ -22,12 +23,16 @@ export async function GET(req: NextRequest) {
   const view = searchParams.get("view") || "all";
   const groupBy = (searchParams.get("groupBy") || "origin") as ChartGroupBy;
 
-  interface GirlRow { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date; endDate: Date | null; ranking: number; status: string; matchedApp: string | null; }
-  const girls = (await prisma.girl.findMany({ orderBy: { startDate: "asc" } })) as GirlRow[];
+  interface GirlRow { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date | null; endDate: Date | null; matchedDate: Date | null; ranking: number; status: string; matchedApp: string | null; }
+  const girls = (await prisma.girl.findMany({ orderBy: { matchedDate: "asc" } })) as GirlRow[];
+
+  function effectiveStart(g: GirlRow): Date {
+    return g.startDate ?? g.matchedDate ?? new Date();
+  }
 
   const timeline: TimelineEntry[] = girls.map((g) => ({
     id: g.id, name: g.name,
-    startMs: g.startDate.getTime(),
+    startMs: effectiveStart(g).getTime(),
     endMs: (g.endDate ?? new Date()).getTime(),
     ranking: g.ranking, status: g.status as "ACTIVE" | "PAST",
   }));
@@ -36,7 +41,7 @@ export async function GET(req: NextRequest) {
     .sort((a, b) => b.ranking - a.ranking)
     .map((g) => ({
       id: g.id, name: g.name, origin: g.origin, occupation: g.occupation,
-      ranking: g.ranking, durationDays: durationDays(g.startDate, g.endDate),
+      ranking: g.ranking, durationDays: durationDays(g.startDate ?? g.matchedDate ?? new Date(), g.endDate),
       status: g.status as "ACTIVE" | "PAST",
     }));
 
@@ -52,7 +57,7 @@ export async function GET(req: NextRequest) {
 
   const monthMap = new Map<string, { newEntries: number; totalRanking: number; girls: string[] }>();
   for (const g of girls) {
-    const month = g.startDate.toISOString().slice(0, 7);
+    const month = effectiveStart(g).toISOString().slice(0, 7);
     const e = monthMap.get(month) ?? { newEntries: 0, totalRanking: 0, girls: [] };
     monthMap.set(month, { newEntries: e.newEntries + 1, totalRanking: e.totalRanking + g.ranking, girls: [...e.girls, g.name] });
   }
