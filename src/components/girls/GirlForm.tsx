@@ -13,6 +13,65 @@ interface GirlFormProps {
   readOnly?: boolean;
 }
 
+// Date input that displays as DD/MM/YYYY but stores YYYY-MM-DD internally
+function DateInput({ value, onChange, className, disabled, required }: {
+  value: string;
+  onChange: (v: string) => void;
+  className?: string;
+  disabled?: boolean;
+  required?: boolean;
+}) {
+  function toDisplay(v: string) {
+    if (!v || v.length < 10) return v;
+    const [y, m, d] = v.split("-");
+    return `${d}/${m}/${y}`;
+  }
+
+  function toISO(raw: string) {
+    const parts = raw.replace(/\D/g, "");
+    if (parts.length < 8) return "";
+    return `${parts.slice(4, 8)}-${parts.slice(2, 4)}-${parts.slice(0, 2)}`;
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    let raw = e.target.value.replace(/[^\d/]/g, "");
+    // Auto-insert slashes
+    const digits = raw.replace(/\//g, "");
+    if (digits.length >= 2 && raw.length === 2) raw = raw + "/";
+    if (digits.length >= 4 && raw.length === 5) raw = raw + "/";
+    if (raw.length > 10) raw = raw.slice(0, 10);
+
+    // Update parent with ISO value when we have a full date
+    const iso = toISO(raw);
+    if (iso && iso.length === 10) onChange(iso);
+    else if (!raw) onChange("");
+
+    // Update display directly via the input element
+    e.target.value = raw;
+  }
+
+  function handleBlur(e: React.FocusEvent<HTMLInputElement>) {
+    // Normalize display on blur
+    const iso = value;
+    e.target.value = toDisplay(iso);
+  }
+
+  return (
+    <input
+      type="text"
+      defaultValue={toDisplay(value)}
+      key={value} // re-render when value changes externally (e.g. voice fill)
+      onChange={handleChange}
+      onBlur={handleBlur}
+      placeholder="DD/MM/YYYY"
+      className={className}
+      disabled={disabled}
+      required={required}
+      maxLength={10}
+    />
+  );
+}
+
 export default function GirlForm({ initial, girlId, mode, readOnly = false }: GirlFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -112,7 +171,15 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
   });
 
   function set(field: string, value: string) {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const next = { ...prev, [field]: value };
+      // When matchedDate is set, default the other date fields if empty
+      if (field === "matchedDate" && value) {
+        if (!prev.firstWhatsapp) next.firstWhatsapp = value;
+        if (!prev.startDate) next.startDate = value;
+      }
+      return next;
+    });
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -291,44 +358,10 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
         </div>
 
         <div>
-          <label className={labelClass}>First Date</label>
-          <input
-            type="date"
-            value={form.startDate}
-            onChange={(e) => set("startDate", e.target.value)}
-            className={inputClass}
-            disabled={readOnly}
-          />
-        </div>
-
-        <div>
-          <label className={labelClass}>End Date</label>
-          {/* Still ongoing toggle */}
-          <label className="flex items-center gap-2 mb-2 cursor-pointer w-fit">
-            <div
-              onClick={() => !readOnly && setOngoing((v) => !v)}
-              className={`w-9 h-5 rounded-full transition-colors flex items-center px-0.5 ${ongoing ? "bg-green-500" : "bg-slate-700"}`}
-            >
-              <div className={`w-4 h-4 rounded-full bg-white transition-transform ${ongoing ? "translate-x-4" : "translate-x-0"}`} />
-            </div>
-            <span className="text-sm text-slate-400">Still ongoing 💚</span>
-          </label>
-          {!ongoing && (
-            <input
-              type="date"
-              value={form.endDate}
-              onChange={(e) => set("endDate", e.target.value)}
-              className={inputClass}
-              disabled={readOnly}
-            />
-          )}
-        </div>
-        <div>
           <label className={labelClass}>Matched Date *</label>
-          <input
-            type="date"
+          <DateInput
             value={form.matchedDate}
-            onChange={(e) => set("matchedDate", e.target.value)}
+            onChange={(v) => set("matchedDate", v)}
             className={inputClass}
             required={!readOnly}
             disabled={readOnly}
@@ -353,15 +386,45 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
           </select>
         </div>
 
-        <div className="sm:col-span-2">
+        <div>
           <label className={labelClass}>First WhatsApp Conversation</label>
-          <input
-            type="date"
+          <DateInput
             value={form.firstWhatsapp}
-            onChange={(e) => set("firstWhatsapp", e.target.value)}
+            onChange={(v) => set("firstWhatsapp", v)}
             className={inputClass}
             disabled={readOnly}
           />
+        </div>
+
+        <div>
+          <label className={labelClass}>First Date</label>
+          <DateInput
+            value={form.startDate}
+            onChange={(v) => set("startDate", v)}
+            className={inputClass}
+            disabled={readOnly}
+          />
+        </div>
+
+        <div>
+          <label className={labelClass}>End Date</label>
+          <label className="flex items-center gap-2 mb-2 cursor-pointer w-fit">
+            <div
+              onClick={() => !readOnly && setOngoing((v) => !v)}
+              className={`w-9 h-5 rounded-full transition-colors flex items-center px-0.5 ${ongoing ? "bg-green-500" : "bg-slate-700"}`}
+            >
+              <div className={`w-4 h-4 rounded-full bg-white transition-transform ${ongoing ? "translate-x-4" : "translate-x-0"}`} />
+            </div>
+            <span className="text-sm text-slate-400">Still ongoing 💚</span>
+          </label>
+          {!ongoing && (
+            <DateInput
+              value={form.endDate}
+              onChange={(v) => set("endDate", v)}
+              className={inputClass}
+              disabled={readOnly}
+            />
+          )}
         </div>
       </div>
 
