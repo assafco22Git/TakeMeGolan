@@ -91,7 +91,7 @@ function CustomYTick({ x, y, payload, statusMap, noFirstDateMap, isDark }: { x?:
       </text>
       {noFirstDate && (
         <text x={0} dy={4} textAnchor="end" fontSize={11}>
-          🚩
+          🫠
         </text>
       )}
     </g>
