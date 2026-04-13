@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import GirlForm from "@/components/girls/GirlForm";
 import DeleteButton from "@/components/girls/DeleteButton";
 import CommentsSection from "@/components/girls/CommentsSection";
+import EndRelationshipButton from "@/components/girls/EndRelationshipButton";
 import { formatDate } from "@/lib/utils";
 
 export default async function GirlDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -43,6 +44,12 @@ export default async function GirlDetailPage({ params }: { params: Promise<{ id:
           }}
         />
       </div>
+
+      {role === "OWNER" && girl.status === "ACTIVE" && (
+        <div className="bg-white dark:bg-[#111827] rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
+          <EndRelationshipButton girlId={id} />
+        </div>
+      )}
 
       <div className="bg-white dark:bg-[#111827] rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
         <h2 className="text-slate-900 dark:text-white font-semibold mb-4">Comments</h2>

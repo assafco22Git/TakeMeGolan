@@ -23,6 +23,7 @@ const updateGirlSchema = z.object({
   matchedDate: z.string().datetime().optional(),
   matchedApp: z.string().max(50).optional().nullable(),
   firstWhatsapp: z.string().datetime().optional().nullable(),
+  endReason: z.string().max(500).optional().nullable(),
 });
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

@@ -17,7 +17,8 @@ export default async function GirlsPage() {
   } catch { /* DB not ready yet */ }
 
   const active = girls.filter((g) => g.status === "ACTIVE");
-  const past = girls.filter((g) => g.status === "PAST");
+  const neverMet = girls.filter((g) => g.status === "PAST" && !g.startDate);
+  const past = girls.filter((g) => g.status === "PAST" && g.startDate);
 
   return (
     <div className="px-4 py-6 md:px-8 max-w-3xl mx-auto w-full">
@@ -58,10 +59,19 @@ export default async function GirlsPage() {
       )}
 
       {past.length > 0 && (
-        <section>
+        <section className="mb-8">
           <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Past</h2>
           <div className="space-y-3">
             {past.map((g) => <GirlCard key={g.id} girl={g} />)}
+          </div>
+        </section>
+      )}
+
+      {neverMet.length > 0 && (
+        <section>
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Never met 👻</h2>
+          <div className="space-y-3">
+            {neverMet.map((g) => <GirlCard key={g.id} girl={g} />)}
           </div>
         </section>
       )}
