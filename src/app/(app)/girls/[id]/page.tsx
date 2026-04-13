@@ -20,7 +20,10 @@ export default async function GirlDetailPage({ params }: { params: Promise<{ id:
     <div className="px-4 py-6 md:px-8 max-w-2xl mx-auto w-full">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{girl.name}</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            {girl.name}
+            {!girl.startDate && <span title="No first date yet">🚩</span>}
+          </h1>
           <p className="text-slate-500 text-sm mt-1">
             {girl.startDate ? formatDate(girl.startDate) : "—"} – {formatDate(girl.endDate)}
           </p>

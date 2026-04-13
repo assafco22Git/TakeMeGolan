@@ -53,7 +53,7 @@ const CustomTooltip = ({
   xMin,
 }: {
   active?: boolean;
-  payload?: { payload: { name: string; ranking: number; startMs: number; endMs: number; offset: number; duration: number; status: string } }[];
+  payload?: { payload: { name: string; ranking: number; startMs: number; endMs: number; offset: number; duration: number; status: string; hasFirstDate: boolean } }[];
   xMin: number;
 }) => {
   if (!active || !payload?.length) return null;
@@ -64,6 +64,7 @@ const CustomTooltip = ({
     <div className="bg-[#1e2a3a] border border-slate-700 rounded-xl px-4 py-3 text-sm shadow-xl">
       <div className="flex items-center gap-2 mb-1">
         <p className="font-bold text-white">{d.name}</p>
+        {!d.hasFirstDate && <span title="No first date yet">🚩</span>}
         {isActive && (
           <>
             <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0" />
@@ -91,7 +92,7 @@ function CustomYTick({ x, y, payload, statusMap, noFirstDateMap, isDark }: { x?:
       </text>
       {noFirstDate && (
         <text x={0} dy={4} textAnchor="end" fontSize={11}>
-          🫠
+          🚩
         </text>
       )}
     </g>
@@ -149,6 +150,7 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
           id: d.id,
           ranking: d.ranking,
           status: d.status,
+          hasFirstDate: d.hasFirstDate,
           startMs: d.startMs,
           endMs: d.endMs,
           offset: clampedStart - xMin,

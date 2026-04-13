@@ -94,7 +94,7 @@ function GirlCard({ girl }: { girl: { id: string; name: string; origin: string |
           <div className="flex items-center gap-2">
             <p className="font-semibold text-slate-900 dark:text-white truncate">{girl.name}</p>
             {girl.status === "ACTIVE" && <span className="flex-shrink-0 w-2 h-2 rounded-full bg-green-400" />}
-            {noFirstDate && <span className="flex-shrink-0 text-base" title="No first date yet">🫠</span>}
+            {noFirstDate && <span className="flex-shrink-0 text-base" title="No first date yet">🚩</span>}
           </div>
           <p className="text-slate-500 text-sm truncate">
             {[girl.origin, girl.occupation].filter(Boolean).join(" · ") || "No details"}

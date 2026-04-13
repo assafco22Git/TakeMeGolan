@@ -56,7 +56,7 @@ export default function LeaderboardTable({ data }: Props) {
                     <span className="inline-block w-2 h-2 rounded-full bg-green-400 flex-shrink-0" />
                   )}
                   {!entry.hasFirstDate && (
-                    <span title="No first date yet" className="flex-shrink-0">🫠</span>
+                    <span title="No first date yet" className="flex-shrink-0">🚩</span>
                   )}
                 </div>
               </td>

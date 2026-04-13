@@ -6,18 +6,20 @@ import { rankingColor } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-interface GirlRow { id: string; name: string; startDate: Date; ranking: number; }
+interface GirlRow { id: string; name: string; startDate: Date | null; matchedDate: Date | null; ranking: number; }
 
 async function getMonthlyData() {
   try {
-    const girls = (await prisma.girl.findMany({ orderBy: { startDate: "asc" } })) as GirlRow[];
-    const monthMap = new Map<string, { month: string; label: string; newGirls: { id: string; name: string; ranking: number }[]; totalRanking: number }>();
+    const girls = (await prisma.girl.findMany({ orderBy: { matchedDate: "asc" } })) as GirlRow[];
+    const monthMap = new Map<string, { month: string; label: string; newGirls: { id: string; name: string; ranking: number; hasFirstDate: boolean }[]; totalRanking: number }>();
 
     for (const g of girls) {
-      const month = g.startDate.toISOString().slice(0, 7);
-      const label = new Date(g.startDate).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+      const ref = g.startDate ?? g.matchedDate;
+      if (!ref) continue;
+      const month = ref.toISOString().slice(0, 7);
+      const label = new Date(ref).toLocaleDateString("en-US", { month: "long", year: "numeric" });
       const existing = monthMap.get(month) ?? { month, label, newGirls: [], totalRanking: 0 };
-      existing.newGirls.push({ id: g.id, name: g.name, ranking: g.ranking });
+      existing.newGirls.push({ id: g.id, name: g.name, ranking: g.ranking, hasFirstDate: !!g.startDate });
       existing.totalRanking += g.ranking;
       monthMap.set(month, existing);
     }
@@ -77,8 +79,9 @@ export default async function MonthlyPage() {
               {m.topGirl && (
                 <div className="text-right">
                   <p className="text-xs text-slate-500">Top this month</p>
-                  <Link href={`/girls/${m.topGirl.id}`} className="text-sm font-semibold text-blue-500 hover:text-blue-400 transition-colors">
+                  <Link href={`/girls/${m.topGirl.id}`} className="text-sm font-semibold text-blue-500 hover:text-blue-400 transition-colors flex items-center gap-1 justify-end">
                     {m.topGirl.name}
+                    {!m.topGirl.hasFirstDate && <span>🚩</span>}
                   </Link>
                 </div>
               )}
@@ -88,6 +91,7 @@ export default async function MonthlyPage() {
                 <Link key={g.id} href={`/girls/${g.id}`} className="flex items-center gap-2 bg-slate-100 dark:bg-[#0a0f1e] border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 hover:border-slate-400 dark:hover:border-slate-600 transition-colors">
                   <span className="text-xs font-bold" style={{ color: rankingColor(g.ranking) }}>{g.ranking}</span>
                   <span className="text-sm text-slate-700 dark:text-slate-300">{g.name}</span>
+                  {!g.hasFirstDate && <span className="text-xs">🚩</span>}
                 </Link>
               ))}
             </div>
