@@ -83,8 +83,8 @@ const CustomTooltip = ({
 
 function CustomYTick({ x, y, payload, statusMap, noFirstDateMap, isDark }: { x?: string | number; y?: string | number; payload?: { value: string }; statusMap: Map<string, string>; noFirstDateMap: Map<string, boolean>; isDark: boolean }) {
   const name = payload?.value ?? "";
-  const textColor = isDark ? "#e2e8f0" : "#0f172a";
   const noFirstDate = noFirstDateMap.get(name) ?? false;
+  const textColor = noFirstDate ? "#f87171" : (isDark ? "#e2e8f0" : "#0f172a");
   return (
     <g transform={`translate(${x},${y})`}>
       <text x={noFirstDate ? -16 : 0} dy={4} textAnchor="end" fill={textColor} fontSize={13} fontWeight={600}>

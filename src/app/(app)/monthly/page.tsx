@@ -90,7 +90,7 @@ export default async function MonthlyPage() {
               {m.newGirls.map((g) => (
                 <Link key={g.id} href={`/girls/${g.id}`} className="flex items-center gap-2 bg-slate-100 dark:bg-[#0a0f1e] border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 hover:border-slate-400 dark:hover:border-slate-600 transition-colors">
                   <span className="text-xs font-bold" style={{ color: rankingColor(g.ranking) }}>{g.ranking}</span>
-                  <span className="text-sm text-slate-700 dark:text-slate-300">{g.name}</span>
+                  <span className={`text-sm ${!g.hasFirstDate ? "text-red-500 dark:text-red-400" : "text-slate-700 dark:text-slate-300"}`}>{g.name}</span>
                   {!g.hasFirstDate && <span className="text-xs">🚩</span>}
                 </Link>
               ))}

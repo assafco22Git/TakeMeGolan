@@ -397,7 +397,7 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
         </div>
 
         <div>
-          <label className={labelClass}>First Date</label>
+          <label className={labelClass}>First Date <span className="text-slate-400 font-normal text-xs">(optional)</span></label>
           <DateInput
             value={form.startDate}
             onChange={(v) => set("startDate", v)}

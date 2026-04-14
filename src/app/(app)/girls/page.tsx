@@ -92,7 +92,7 @@ function GirlCard({ girl }: { girl: { id: string; name: string; origin: string |
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-semibold text-slate-900 dark:text-white truncate">{girl.name}</p>
+            <p className={`font-semibold truncate ${noFirstDate ? "text-red-500 dark:text-red-400" : "text-slate-900 dark:text-white"}`}>{girl.name}</p>
             {girl.status === "ACTIVE" && <span className="flex-shrink-0 w-2 h-2 rounded-full bg-green-400" />}
             {noFirstDate && <span className="flex-shrink-0 text-base" title="No first date yet">🚩</span>}
           </div>

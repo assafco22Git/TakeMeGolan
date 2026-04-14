@@ -49,7 +49,7 @@ export default function LeaderboardTable({ data }: Props) {
               </td>
               <td className="py-3 px-3">
                 <div className="flex items-center gap-1.5">
-                  <Link href={`/girls/${entry.id}`} className="font-semibold text-slate-900 dark:text-white hover:text-blue-500 dark:hover:text-blue-400 transition-colors">
+                  <Link href={`/girls/${entry.id}`} className={`font-semibold hover:text-blue-500 dark:hover:text-blue-400 transition-colors ${!entry.hasFirstDate ? "text-red-500 dark:text-red-400" : "text-slate-900 dark:text-white"}`}>
                     {entry.name}
                   </Link>
                   {entry.status === "ACTIVE" && (
