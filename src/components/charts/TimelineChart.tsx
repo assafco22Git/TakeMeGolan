@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   ComposedChart,
   XAxis,
@@ -26,7 +26,6 @@ const RANGE_MS: Record<RangeKey, number | null> = {
   All: null,
 };
 
-// How many ticks to show per range
 const RANGE_TICKS: Record<RangeKey, number> = {
   "1M": 10,
   "3M": 12,
@@ -41,16 +40,12 @@ function formatDay(ms: number) {
 
 function formatDayFull(ms: number) {
   return new Date(ms).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
+    month: "short", day: "numeric", year: "numeric",
   });
 }
 
 const CustomTooltip = ({
-  active,
-  payload,
-  xMin,
+  active, payload, xMin,
 }: {
   active?: boolean;
   payload?: { payload: { name: string; ranking: number; startMs: number; endMs: number; offset: number; duration: number; status: string; hasFirstDate: boolean } }[];
@@ -81,7 +76,12 @@ const CustomTooltip = ({
   );
 };
 
-function CustomYTick({ x, y, payload, statusMap, noFirstDateMap, isDark }: { x?: string | number; y?: string | number; payload?: { value: string }; statusMap: Map<string, string>; noFirstDateMap: Map<string, boolean>; isDark: boolean }) {
+function CustomYTick({ x, y, payload, noFirstDateMap, isDark }: {
+  x?: string | number; y?: string | number;
+  payload?: { value: string };
+  noFirstDateMap: Map<string, boolean>;
+  isDark: boolean;
+}) {
   const name = payload?.value ?? "";
   const noFirstDate = noFirstDateMap.get(name) ?? false;
   const textColor = noFirstDate ? "#f87171" : (isDark ? "#e2e8f0" : "#0f172a");
@@ -91,9 +91,7 @@ function CustomYTick({ x, y, payload, statusMap, noFirstDateMap, isDark }: { x?:
         {name}
       </text>
       {noFirstDate && (
-        <text x={0} dy={4} textAnchor="end" fontSize={11}>
-          🚩
-        </text>
+        <text x={0} dy={4} textAnchor="end" fontSize={11}>🚩</text>
       )}
     </g>
   );
@@ -115,8 +113,8 @@ function useDarkMode() {
 
 export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
   const [range, setRange] = useState<RangeKey>("All");
+  const [panOffset, setPanOffset] = useState(0); // ms to shift left from the default right-anchored view
   const isDark = useDarkMode();
-  const statusMap = useMemo(() => new Map(data.map((d) => [d.name, d.status])), [data]);
   const noFirstDateMap = useMemo(() => new Map(data.map((d) => [d.name, !d.hasFirstDate])), [data]);
 
   if (data.length === 0) {
@@ -132,13 +130,34 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
   const globalMax = Math.max(...data.map((d) => d.endMs));
 
   const rangeMs = RANGE_MS[range];
-  // xMin: left edge of the visible window
-  const xMin = rangeMs ? Math.max(globalMin, now - rangeMs) : globalMin;
-  const xMax = globalMax;
-  const pad = Math.max((xMax - xMin) * 0.04, 86400000); // at least 1 day padding
+  const windowSize = rangeMs ?? (globalMax - globalMin + 2 * 86400000);
 
-  // Build relative chart data: offset (invisible lead) + duration (visible bar)
-  // Both values are in ms, relative to xMin so the domain is [0, xMax-xMin+pad]
+  // Default right edge: globalMax + small pad. Pan shifts both edges left.
+  const pad = Math.max(windowSize * 0.04, 86400000);
+  const defaultRight = globalMax + pad;
+  const xMax = defaultRight - panOffset;
+  const xMin = xMax - windowSize;
+
+  // Clamp: can't pan right of default, can't pan so far left that xMin < globalMin - pad
+  const canPanLeft = panOffset < (defaultRight - globalMin - windowSize + pad);
+  const canPanRight = panOffset > 0;
+
+  const panStep = windowSize * 0.5;
+
+  const panLeft = useCallback(() => {
+    setPanOffset((prev) => Math.min(prev + panStep, defaultRight - globalMin - windowSize + pad));
+  }, [panStep, defaultRight, globalMin, windowSize, pad]);
+
+  const panRight = useCallback(() => {
+    setPanOffset((prev) => Math.max(prev - panStep, 0));
+  }, [panStep]);
+
+  // Reset pan when range changes
+  const handleRangeChange = useCallback((r: RangeKey) => {
+    setRange(r);
+    setPanOffset(0);
+  }, []);
+
   const chartData = useMemo(() => {
     return data
       .filter((d) => d.endMs >= xMin && d.startMs <= xMax)
@@ -154,36 +173,66 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
           startMs: d.startMs,
           endMs: d.endMs,
           offset: clampedStart - xMin,
-          duration: Math.max(clampedEnd - clampedStart, 86400000), // min 1 day
+          duration: Math.max(clampedEnd - clampedStart, 86400000),
         };
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, range]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, range, panOffset]);
 
-  const domainMax = xMax - xMin + pad;
+  const domainMax = windowSize + pad;
+  const nowRelative = now - xMin;
 
   return (
     <div className="space-y-3">
-      {/* Range selector */}
-      <div className="flex gap-1.5">
-        {RANGES.map((r) => (
-          <button
-            key={r}
-            onClick={() => setRange(r)}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
-              range === r
-                ? "bg-blue-600 text-white"
-                : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200"
-            }`}
-          >
-            {r}
-          </button>
-        ))}
+      {/* Controls row */}
+      <div className="flex items-center justify-between gap-2">
+        {/* Range selector */}
+        <div className="flex gap-1.5">
+          {RANGES.map((r) => (
+            <button
+              key={r}
+              onClick={() => handleRangeChange(r)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                range === r
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200"
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+
+        {/* Pan buttons */}
+        {range !== "All" && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={panLeft}
+              disabled={!canPanLeft}
+              title="Scroll left (older)"
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button
+              onClick={panRight}
+              disabled={!canPanRight}
+              title="Scroll right (newer)"
+              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
 
       <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 36 + 40)}>
         <ComposedChart
-          key={range}
+          key={`${range}-${panOffset}`}
           layout="vertical"
           data={chartData}
           margin={{ top: 28, right: 24, bottom: 8, left: 60 }}
@@ -200,31 +249,30 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
           <YAxis
             type="category"
             dataKey="name"
-            tick={(props) => <CustomYTick {...props} statusMap={statusMap} noFirstDateMap={noFirstDateMap} isDark={isDark} />}
+            tick={(props) => <CustomYTick {...props} noFirstDateMap={noFirstDateMap} isDark={isDark} />}
             axisLine={false}
             tickLine={false}
             width={72}
           />
           <Tooltip content={<CustomTooltip xMin={xMin} />} />
 
-          {/* Today reference line */}
-          <ReferenceLine
-            x={now - xMin}
-            stroke="#f59e0b"
-            strokeWidth={2}
-            strokeDasharray="4 3"
-            label={{ value: "Today", position: "insideTopRight", fill: "#f59e0b", fontSize: 10, fontWeight: 600 }}
-          />
+          {/* Today reference line — only show if in visible window */}
+          {nowRelative >= 0 && nowRelative <= domainMax && (
+            <ReferenceLine
+              x={nowRelative}
+              stroke="#f59e0b"
+              strokeWidth={2}
+              strokeDasharray="4 3"
+              label={{ value: "Today", position: "insideTopRight", fill: "#f59e0b", fontSize: 10, fontWeight: 600 }}
+            />
+          )}
 
-          {/* Invisible offset bar — pushes the visible bar to the right start position */}
           <Bar dataKey="offset" stackId="timeline" fill="transparent" isAnimationActive={false} barSize={12} />
-
-          {/* Visible duration bar */}
           <Bar
             dataKey="duration"
             stackId="timeline"
             radius={6}
-            background={{ fill: "#1e293b", radius: 6 }}
+            background={{ fill: isDark ? "#1e293b" : "#e2e8f0", radius: 6 }}
             isAnimationActive={false}
             barSize={12}
           >
