@@ -223,10 +223,11 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
             data={chartData}
             margin={{ top: MARGIN_TOP, right: 0, bottom: MARGIN_BOTTOM, left: 8 }}
           >
-            {/* Hidden XAxis keeps the same bottom margin as the right panel */}
+            {/* Hidden XAxis — same height prop as right panel to keep drawing areas in sync */}
             <XAxis
               {...xAxisBase}
               ticks={labelTicks}
+              height={24}
               tick={{ fill: "transparent", fontSize: 11 }}
               axisLine={{ stroke: "transparent" }}
               tickLine={false}
@@ -245,6 +246,9 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
               axisLine={false}
               tickLine={false}
             />
+            {/* Invisible bars mirror the right panel so Recharts uses identical row spacing */}
+            <Bar dataKey="offset" stackId="timeline" fill="transparent" isAnimationActive={false} barSize={12} opacity={0} />
+            <Bar dataKey="duration" stackId="timeline" fill="transparent" isAnimationActive={false} barSize={12} opacity={0} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -261,6 +265,7 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
               <XAxis
                 {...xAxisBase}
                 ticks={labelTicks}
+                height={24}
                 tickFormatter={(v) =>
                   new Date(xMin + v).toLocaleDateString("en-US", { month: "short" })
                 }
