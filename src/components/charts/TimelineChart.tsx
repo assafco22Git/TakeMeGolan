@@ -14,7 +14,7 @@ import {
 import type { TimelineEntry } from "@/types";
 import { vibeColor, vibeEmoji, vibeLabel } from "@/lib/utils";
 
-const LABEL_WIDTH = 82;
+const LABEL_WIDTH = 120;
 const MARGIN_TOP = 8;
 const MARGIN_BOTTOM = 32;
 const ROW_HEIGHT = 36;
@@ -159,6 +159,22 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
     return marks;
   }, [globalMin, globalMax, xMin, domainSize]);
 
+  // Month boundary reference lines (skip Jan — already covered by year marks)
+  const monthMarks = useMemo(() => {
+    const start = new Date(globalMin);
+    const end = new Date(globalMax);
+    const marks: { key: string; x: number }[] = [];
+    const cur = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+    while (cur <= end) {
+      if (cur.getMonth() !== 0) { // skip January (year line handles it)
+        const x = cur.getTime() - xMin;
+        if (x > 0 && x < domainSize) marks.push({ key: cur.toISOString(), x });
+      }
+      cur.setMonth(cur.getMonth() + 1);
+    }
+    return marks;
+  }, [globalMin, globalMax, xMin, domainSize]);
+
   // Scroll to most-recent on mount
   useEffect(() => {
     if (scrollRef.current) {
@@ -271,6 +287,17 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
                   }}
                 />
               )}
+
+              {/* Month boundary markers */}
+              {monthMarks.map(({ key, x }) => (
+                <ReferenceLine
+                  key={key}
+                  x={x}
+                  stroke="#1e293b"
+                  strokeWidth={1}
+                  strokeDasharray="2 6"
+                />
+              ))}
 
               {/* Year boundary markers */}
               {yearMarks.map(({ year, x }) => (
