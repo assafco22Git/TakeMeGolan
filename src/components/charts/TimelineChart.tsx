@@ -293,9 +293,9 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
                 <ReferenceLine
                   key={key}
                   x={x}
-                  stroke="#1e293b"
+                  stroke="#334155"
                   strokeWidth={1}
-                  strokeDasharray="2 6"
+                  strokeDasharray="3 4"
                 />
               ))}
 
