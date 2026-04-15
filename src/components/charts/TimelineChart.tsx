@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import {
   ComposedChart,
   XAxis,
@@ -13,26 +13,6 @@ import {
 } from "recharts";
 import type { TimelineEntry } from "@/types";
 import { vibeColor, vibeEmoji, vibeLabel } from "@/lib/utils";
-
-type RangeKey = "1M" | "3M" | "6M" | "1Y" | "All";
-
-const RANGES: RangeKey[] = ["1M", "3M", "6M", "1Y", "All"];
-
-const RANGE_MS: Record<RangeKey, number | null> = {
-  "1M": 30 * 86400000,
-  "3M": 90 * 86400000,
-  "6M": 180 * 86400000,
-  "1Y": 365 * 86400000,
-  All: null,
-};
-
-const RANGE_TICKS: Record<RangeKey, number> = {
-  "1M": 10,
-  "3M": 12,
-  "6M": 12,
-  "1Y": 13,
-  All: 8,
-};
 
 function formatDay(ms: number) {
   return new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -112,10 +92,9 @@ function useDarkMode() {
 }
 
 export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
-  const [range, setRange] = useState<RangeKey>("All");
-  const [panOffset, setPanOffset] = useState(0); // ms to shift left from the default right-anchored view
   const isDark = useDarkMode();
   const noFirstDateMap = useMemo(() => new Map(data.map((d) => [d.name, !d.hasFirstDate])), [data]);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   if (data.length === 0) {
     return (
@@ -128,160 +107,102 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
   const now = Date.now();
   const globalMin = Math.min(...data.map((d) => d.startMs));
   const globalMax = Math.max(...data.map((d) => d.endMs));
+  const totalDays = Math.max(1, Math.ceil((globalMax - globalMin) / 86400000));
 
-  const rangeMs = RANGE_MS[range];
-  const windowSize = rangeMs ?? (globalMax - globalMin + 2 * 86400000);
+  // ~5px per day, minimum 800px — makes the chart horizontally scrollable
+  const chartWidth = Math.max(800, totalDays * 5);
 
-  // Default right edge: globalMax + small pad. Pan shifts both edges left.
-  const pad = Math.max(windowSize * 0.04, 86400000);
-  const defaultRight = globalMax + pad;
-  const xMax = defaultRight - panOffset;
-  const xMin = xMax - windowSize;
+  const pad = Math.max(7 * 86400000, totalDays * 86400000 * 0.02);
+  const xMin = globalMin - pad;
+  const xMax = globalMax + pad;
+  const domainSize = xMax - xMin;
 
-  // Clamp: can't pan right of default, can't pan so far left that xMin < globalMin - pad
-  const canPanLeft = panOffset < (defaultRight - globalMin - windowSize + pad);
-  const canPanRight = panOffset > 0;
+  // Roughly one tick per month
+  const tickCount = Math.max(6, Math.min(30, Math.ceil(totalDays / 30)));
 
-  const panStep = windowSize * 0.5;
-
-  const panLeft = useCallback(() => {
-    setPanOffset((prev) => Math.min(prev + panStep, defaultRight - globalMin - windowSize + pad));
-  }, [panStep, defaultRight, globalMin, windowSize, pad]);
-
-  const panRight = useCallback(() => {
-    setPanOffset((prev) => Math.max(prev - panStep, 0));
-  }, [panStep]);
-
-  // Reset pan when range changes
-  const handleRangeChange = useCallback((r: RangeKey) => {
-    setRange(r);
-    setPanOffset(0);
+  // Scroll to the right (most recent) on mount
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+    }
   }, []);
 
   const chartData = useMemo(() => {
-    return data
-      .filter((d) => d.endMs >= xMin && d.startMs <= xMax)
-      .map((d) => {
-        const clampedStart = Math.max(d.startMs, xMin);
-        const clampedEnd = Math.min(d.endMs, xMax);
-        return {
-          name: d.name,
-          id: d.id,
-          vibe: d.vibe,
-          status: d.status,
-          hasFirstDate: d.hasFirstDate,
-          startMs: d.startMs,
-          endMs: d.endMs,
-          offset: clampedStart - xMin,
-          duration: Math.max(clampedEnd - clampedStart, 86400000),
-        };
-      });
+    return data.map((d) => ({
+      name: d.name,
+      id: d.id,
+      vibe: d.vibe,
+      status: d.status,
+      hasFirstDate: d.hasFirstDate,
+      startMs: d.startMs,
+      endMs: d.endMs,
+      offset: d.startMs - xMin,
+      duration: Math.max(d.endMs - d.startMs, 86400000),
+    }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, range, panOffset]);
+  }, [data]);
 
-  const domainMax = windowSize + pad;
   const nowRelative = now - xMin;
 
   return (
-    <div className="space-y-3">
-      {/* Controls row */}
-      <div className="flex items-center justify-between gap-2">
-        {/* Range selector */}
-        <div className="flex gap-1.5">
-          {RANGES.map((r) => (
-            <button
-              key={r}
-              onClick={() => handleRangeChange(r)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                range === r
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200"
-              }`}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
-
-        {/* Pan buttons */}
-        {range !== "All" && (
-          <div className="flex items-center gap-1">
-            <button
-              onClick={panLeft}
-              disabled={!canPanLeft}
-              title="Scroll left (older)"
-              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <button
-              onClick={panRight}
-              disabled={!canPanRight}
-              title="Scroll right (newer)"
-              className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-        )}
-      </div>
-
-      <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 36 + 40)}>
-        <ComposedChart
-          key={`${range}-${panOffset}`}
-          layout="vertical"
-          data={chartData}
-          margin={{ top: 28, right: 24, bottom: 8, left: 60 }}
-        >
-          <XAxis
-            type="number"
-            domain={[0, domainMax]}
-            tickFormatter={(v) => formatDay(xMin + v)}
-            tickCount={RANGE_TICKS[range]}
-            tick={{ fill: "#94a3b8", fontSize: 11 }}
-            axisLine={{ stroke: "#334155" }}
-            tickLine={false}
-          />
-          <YAxis
-            type="category"
-            dataKey="name"
-            tick={(props) => <CustomYTick {...props} noFirstDateMap={noFirstDateMap} isDark={isDark} />}
-            axisLine={false}
-            tickLine={false}
-            width={72}
-          />
-          <Tooltip content={<CustomTooltip xMin={xMin} />} />
-
-          {/* Today reference line — only show if in visible window */}
-          {nowRelative >= 0 && nowRelative <= domainMax && (
-            <ReferenceLine
-              x={nowRelative}
-              stroke="#f59e0b"
-              strokeWidth={2}
-              strokeDasharray="4 3"
-              label={{ value: "Today", position: "insideTopRight", fill: "#f59e0b", fontSize: 10, fontWeight: 600 }}
-            />
-          )}
-
-          <Bar dataKey="offset" stackId="timeline" fill="transparent" isAnimationActive={false} barSize={12} />
-          <Bar
-            dataKey="duration"
-            stackId="timeline"
-            radius={6}
-            background={{ fill: isDark ? "#1e293b" : "#e2e8f0", radius: 6 }}
-            isAnimationActive={false}
-            barSize={12}
+    <div
+      ref={scrollRef}
+      className="w-full overflow-x-auto rounded-xl"
+      style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+    >
+      <div style={{ width: chartWidth, minWidth: "100%" }}>
+        <ResponsiveContainer width="100%" height={Math.max(200, chartData.length * 36 + 40)}>
+          <ComposedChart
+            layout="vertical"
+            data={chartData}
+            margin={{ top: 28, right: 24, bottom: 8, left: 60 }}
           >
-            {chartData.map((entry) => (
-              <Cell key={entry.id} fill={vibeColor(entry.vibe)} fillOpacity={0.85} />
-            ))}
-          </Bar>
-        </ComposedChart>
-      </ResponsiveContainer>
+            <XAxis
+              type="number"
+              domain={[0, domainSize]}
+              tickFormatter={(v) => formatDay(xMin + v)}
+              tickCount={tickCount}
+              tick={{ fill: "#94a3b8", fontSize: 11 }}
+              axisLine={{ stroke: "#334155" }}
+              tickLine={false}
+            />
+            <YAxis
+              type="category"
+              dataKey="name"
+              tick={(props) => <CustomYTick {...props} noFirstDateMap={noFirstDateMap} isDark={isDark} />}
+              axisLine={false}
+              tickLine={false}
+              width={72}
+            />
+            <Tooltip content={<CustomTooltip xMin={xMin} />} />
+
+            {/* Today reference line */}
+            {nowRelative >= 0 && nowRelative <= domainSize && (
+              <ReferenceLine
+                x={nowRelative}
+                stroke="#f59e0b"
+                strokeWidth={2}
+                strokeDasharray="4 3"
+                label={{ value: "Today", position: "insideTopRight", fill: "#f59e0b", fontSize: 10, fontWeight: 600 }}
+              />
+            )}
+
+            <Bar dataKey="offset" stackId="timeline" fill="transparent" isAnimationActive={false} barSize={12} />
+            <Bar
+              dataKey="duration"
+              stackId="timeline"
+              radius={6}
+              background={{ fill: isDark ? "#1e293b" : "#e2e8f0", radius: 6 }}
+              isAnimationActive={false}
+              barSize={12}
+            >
+              {chartData.map((entry) => (
+                <Cell key={entry.id} fill={vibeColor(entry.vibe)} fillOpacity={0.85} />
+              ))}
+            </Bar>
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
