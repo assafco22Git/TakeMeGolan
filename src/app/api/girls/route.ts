@@ -17,7 +17,7 @@ const createGirlSchema = z.object({
   occupation: z.string().max(100).optional().nullable(),
   startDate: z.string().datetime().optional().nullable(),
   endDate: z.string().datetime().optional().nullable(),
-  ranking: z.number().min(0).max(10),
+  vibe: z.enum(["good", "bad", "neutral"]).default("neutral"),
   notes: z.string().max(2000).optional().nullable(),
   status: z.enum(["ACTIVE", "PAST"]).default("ACTIVE"),
   matchedDate: z.string().datetime(),

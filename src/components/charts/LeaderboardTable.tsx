@@ -1,17 +1,10 @@
 import Link from "next/link";
 import type { LeaderboardEntry } from "@/types";
-import { cn } from "@/lib/utils";
+import { cn, vibeColor, vibeEmoji, vibeLabel } from "@/lib/utils";
 
 interface Props {
   data: LeaderboardEntry[];
 }
-
-const medals = ["🥇", "🥈", "🥉"];
-const medalStyles = [
-  "bg-yellow-500/10 border-yellow-500/30",
-  "bg-slate-400/10 border-slate-400/30",
-  "bg-orange-700/10 border-orange-600/30",
-];
 
 export default function LeaderboardTable({ data }: Props) {
   if (data.length === 0) {
@@ -31,7 +24,7 @@ export default function LeaderboardTable({ data }: Props) {
             <th className="text-left py-2 px-3">Name</th>
             <th className="text-left py-2 px-3 hidden sm:table-cell">Origin</th>
             <th className="text-left py-2 px-3 hidden sm:table-cell">Job</th>
-            <th className="text-right py-2 px-3">Rank</th>
+            <th className="text-right py-2 px-3">Vibe</th>
             <th className="text-right py-2 px-3 hidden sm:table-cell">Days</th>
           </tr>
         </thead>
@@ -41,12 +34,10 @@ export default function LeaderboardTable({ data }: Props) {
               key={entry.id}
               className={cn(
                 "border rounded-xl transition-colors",
-                i < 3 ? medalStyles[i] : "border-transparent hover:bg-slate-800/50"
+                "border-transparent hover:bg-slate-100/50 dark:hover:bg-slate-800/50"
               )}
             >
-              <td className="py-3 px-3 font-bold text-lg w-10">
-                {i < 3 ? medals[i] : <span className="text-slate-500 text-sm">{i + 1}</span>}
-              </td>
+              <td className="py-3 px-3 text-slate-500 text-sm w-10">{i + 1}</td>
               <td className="py-3 px-3">
                 <div className="flex items-center gap-1.5">
                   <Link href={`/girls/${entry.id}`} className={`font-semibold hover:text-blue-500 dark:hover:text-blue-400 transition-colors ${!entry.hasFirstDate ? "text-red-500 dark:text-red-400" : "text-slate-900 dark:text-white"}`}>
@@ -68,10 +59,10 @@ export default function LeaderboardTable({ data }: Props) {
               </td>
               <td className="py-3 px-3 text-right">
                 <span
-                  className="font-bold text-base"
-                  style={{ color: entry.ranking >= 8 ? "#f59e0b" : entry.ranking >= 6 ? "#3b82f6" : "#94a3b8" }}
+                  className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full"
+                  style={{ backgroundColor: vibeColor(entry.vibe) + "22", color: vibeColor(entry.vibe) }}
                 >
-                  {entry.ranking}
+                  {vibeEmoji(entry.vibe)} {vibeLabel(entry.vibe)}
                 </span>
               </td>
               <td className="py-3 px-3 text-right text-slate-400 hidden sm:table-cell">

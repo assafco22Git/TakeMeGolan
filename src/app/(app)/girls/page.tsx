@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getRole } from "@/lib/role";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { formatDate, durationInDays, rankingColor } from "@/lib/utils";
+import { formatDate, durationInDays, vibeColor, vibeEmoji } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,7 @@ export default async function GirlsPage() {
   const role = await getRole();
   if (!role) redirect("/login");
 
-  interface GirlRow { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date | null; endDate: Date | null; ranking: number; status: string; }
+  interface GirlRow { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date | null; endDate: Date | null; vibe: string; status: string; }
   let girls: GirlRow[] = [];
   try {
     girls = (await prisma.girl.findMany({ orderBy: { startDate: "desc" } })) as GirlRow[];
@@ -79,16 +79,16 @@ export default async function GirlsPage() {
   );
 }
 
-function GirlCard({ girl }: { girl: { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date | null; endDate: Date | null; ranking: number; status: string } }) {
+function GirlCard({ girl }: { girl: { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date | null; endDate: Date | null; vibe: string; status: string } }) {
   const days = durationInDays(girl.startDate ?? new Date(), girl.endDate);
-  const color = rankingColor(girl.ranking);
+  const color = vibeColor(girl.vibe);
   const noFirstDate = !girl.startDate || girl.startDate > new Date();
 
   return (
     <Link href={`/girls/${girl.id}`}>
       <div className="bg-white dark:bg-[#111827] hover:bg-slate-50 dark:hover:bg-[#1a2436] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex items-center gap-4 transition-colors cursor-pointer">
-        <div className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center font-bold text-lg" style={{ backgroundColor: color + "22", color }}>
-          {girl.ranking}
+        <div className="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl" style={{ backgroundColor: color + "22" }}>
+          {vibeEmoji(girl.vibe)}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">

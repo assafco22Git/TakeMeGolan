@@ -4,6 +4,7 @@ import Link from "next/link";
 import LeaderboardTable from "@/components/charts/LeaderboardTable";
 import { DashboardTimelineChart, DashboardCustomChart } from "@/components/charts/DashboardCharts";
 import { prisma } from "@/lib/prisma";
+import { vibeOrder } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ interface GirlRow {
   startDate: Date | null;
   endDate: Date | null;
   matchedDate: Date | null;
-  ranking: number;
+  vibe: string;
   status: string;
 }
 
@@ -24,7 +25,7 @@ async function getStats() {
   try {
     girls = (await prisma.girl.findMany({ orderBy: { matchedDate: "asc" } })) as GirlRow[];
   } catch {
-    return { timeline: [], leaderboard: [], distribution: [] };
+    return { timeline: [], leaderboard: [], distribution: [], goodCount: 0 };
   }
 
   function dur(start: Date | null, end?: Date | null) {
@@ -41,51 +42,45 @@ async function getStats() {
     name: g.name,
     startMs: effectiveStart(g).getTime(),
     endMs: (g.endDate ?? new Date()).getTime(),
-    ranking: g.ranking,
+    vibe: g.vibe as "good" | "bad" | "neutral",
     status: g.status as "ACTIVE" | "PAST",
     hasFirstDate: g.startDate !== null,
   }));
 
   const leaderboard = [...girls]
-    .sort((a, b) => b.ranking - a.ranking)
+    .sort((a, b) => vibeOrder(a.vibe) - vibeOrder(b.vibe))
     .map((g) => ({
       id: g.id,
       name: g.name,
       origin: g.origin,
       occupation: g.occupation,
-      ranking: g.ranking,
+      vibe: g.vibe as "good" | "bad" | "neutral",
       durationDays: dur(g.startDate, g.endDate),
       status: g.status as "ACTIVE" | "PAST",
       hasFirstDate: g.startDate !== null,
     }));
 
-  const originMap = new Map<string, { count: number; total: number }>();
+  const originMap = new Map<string, { count: number }>();
   for (const g of girls) {
     const key = g.origin || "Unknown";
-    const e = originMap.get(key) ?? { count: 0, total: 0 };
-    originMap.set(key, { count: e.count + 1, total: e.total + g.ranking });
+    const e = originMap.get(key) ?? { count: 0 };
+    originMap.set(key, { count: e.count + 1 });
   }
   const distribution = Array.from(originMap.entries())
-    .map(([label, { count, total }]) => ({
-      label,
-      count,
-      avgRanking: Math.round((total / count) * 10) / 10,
-    }))
+    .map(([label, { count }]) => ({ label, count }))
     .sort((a, b) => b.count - a.count);
 
-  return { timeline, leaderboard, distribution };
+  const goodCount = girls.filter((g) => g.vibe === "good").length;
+
+  return { timeline, leaderboard, distribution, goodCount };
 }
 
 export default async function DashboardPage() {
   const role = await getRole();
   if (!role) redirect("/login");
 
-  const { timeline, leaderboard, distribution } = await getStats();
+  const { timeline, leaderboard, distribution, goodCount } = await getStats();
   const activeCount = timeline.filter((t) => t.status === "ACTIVE").length;
-  const avgRanking =
-    leaderboard.length > 0
-      ? Math.round((leaderboard.reduce((s, g) => s + g.ranking, 0) / leaderboard.length) * 10) / 10
-      : 0;
 
   return (
     <div className="px-4 py-6 md:px-8 max-w-5xl mx-auto w-full space-y-6">
@@ -114,15 +109,15 @@ export default async function DashboardPage() {
           <p className="text-3xl font-bold text-green-500 mt-1">{activeCount}</p>
         </div>
         <div className="bg-white dark:bg-[#111827] rounded-2xl p-4 border border-slate-200 dark:border-slate-800">
-          <p className="text-slate-500 text-xs uppercase tracking-wider">Avg Rank</p>
-          <p className="text-3xl font-bold text-blue-500 mt-1">{avgRanking || "—"}</p>
+          <p className="text-slate-500 text-xs uppercase tracking-wider">Good Vibes</p>
+          <p className="text-3xl font-bold mt-1" style={{ color: "#f472b6" }}>{goodCount} 💗</p>
         </div>
       </div>
 
       <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
         <div className="mb-4">
           <h2 className="text-slate-900 dark:text-white font-semibold">Relationship Timeline</h2>
-          <p className="text-slate-500 text-xs mt-0.5">Duration &amp; ranking over time</p>
+          <p className="text-slate-500 text-xs mt-0.5">Duration &amp; vibe over time</p>
         </div>
         <DashboardTimelineChart data={timeline} />
       </div>
@@ -130,7 +125,7 @@ export default async function DashboardPage() {
       <div className="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
         <div className="mb-4">
           <h2 className="text-slate-900 dark:text-white font-semibold">Leaderboard</h2>
-          <p className="text-slate-500 text-xs mt-0.5">Ranked by score</p>
+          <p className="text-slate-500 text-xs mt-0.5">Sorted by vibe</p>
         </div>
         <LeaderboardTable data={leaderboard} />
       </div>

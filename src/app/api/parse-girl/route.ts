@@ -34,7 +34,7 @@ Fields to extract:
 - origin (string or null) — where she's originally from (city/country)
 - hometown (string or null) — the city she currently lives in
 - occupation (string or null) — her job/profession
-- ranking (number 0-10, default 5) — how attractive/interesting she is
+- vibe (one of: "good", "neutral", "bad", default "neutral") — overall vibe: "good" means things went/are going well, "bad" means it didn't work out or bad energy, "neutral" means unsure or average
 - matchedApp (string or null) — one of: Hinge, Tinder, OKCupid, Bumble, Matchmaking, "Met her on my own", or null
 - matchedDate (string or null) — date they matched, as YYYY-MM-DD
 - startDate (string or null) — date of their first date, as YYYY-MM-DD
@@ -42,7 +42,7 @@ Fields to extract:
 - firstWhatsapp (string or null) — date of first WhatsApp conversation, as YYYY-MM-DD
 - notes (string or null) — any extra notes or description
 
-Return ONLY the JSON object, no explanation. If a field is not mentioned, use null (or 5 for ranking).
+Return ONLY the JSON object, no explanation. If a field is not mentioned, use null (or "neutral" for vibe).
 
 Spoken description: "${transcript}"`;
 

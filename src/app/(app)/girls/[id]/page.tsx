@@ -44,6 +44,7 @@ export default async function GirlDetailPage({ params }: { params: Promise<{ id:
             createdAt: girl.createdAt.toISOString(),
             updatedAt: girl.updatedAt.toISOString(),
             status: girl.status as "ACTIVE" | "PAST",
+            vibe: girl.vibe as "good" | "bad" | "neutral",
           }}
         />
       </div>

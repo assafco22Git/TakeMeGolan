@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { ROLE_COOKIE } from "@/lib/role";
+import { vibeOrder } from "@/lib/utils";
 import type { TimelineEntry, LeaderboardEntry, DistributionEntry, MonthlyStats, ChartGroupBy } from "@/types";
 
 async function getRole() {
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
   const view = searchParams.get("view") || "all";
   const groupBy = (searchParams.get("groupBy") || "origin") as ChartGroupBy;
 
-  interface GirlRow { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date | null; endDate: Date | null; matchedDate: Date | null; ranking: number; status: string; matchedApp: string | null; }
+  interface GirlRow { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date | null; endDate: Date | null; matchedDate: Date | null; vibe: string; status: string; matchedApp: string | null; }
   const girls = (await prisma.girl.findMany({ orderBy: { matchedDate: "asc" } })) as GirlRow[];
 
   function effectiveStart(g: GirlRow): Date {
@@ -34,40 +35,42 @@ export async function GET(req: NextRequest) {
     id: g.id, name: g.name,
     startMs: effectiveStart(g).getTime(),
     endMs: (g.endDate ?? new Date()).getTime(),
-    ranking: g.ranking, status: g.status as "ACTIVE" | "PAST",
+    vibe: g.vibe as "good" | "bad" | "neutral",
+    status: g.status as "ACTIVE" | "PAST",
     hasFirstDate: g.startDate !== null,
   }));
 
   const leaderboard: LeaderboardEntry[] = [...girls]
-    .sort((a, b) => b.ranking - a.ranking)
+    .sort((a, b) => vibeOrder(a.vibe) - vibeOrder(b.vibe))
     .map((g) => ({
       id: g.id, name: g.name, origin: g.origin, occupation: g.occupation,
-      ranking: g.ranking, durationDays: durationDays(g.startDate ?? g.matchedDate ?? new Date(), g.endDate),
+      vibe: g.vibe as "good" | "bad" | "neutral",
+      durationDays: durationDays(g.startDate ?? g.matchedDate ?? new Date(), g.endDate),
       status: g.status as "ACTIVE" | "PAST",
       hasFirstDate: g.startDate !== null,
     }));
 
-  const distMap = new Map<string, { count: number; total: number }>();
+  const distMap = new Map<string, { count: number }>();
   for (const g of girls) {
     const key = groupBy === "status" ? g.status : groupBy === "occupation" ? (g.occupation || "Unknown") : groupBy === "matchedApp" ? (g.matchedApp || "Unknown") : (g.origin || "Unknown");
-    const e = distMap.get(key) ?? { count: 0, total: 0 };
-    distMap.set(key, { count: e.count + 1, total: e.total + g.ranking });
+    const e = distMap.get(key) ?? { count: 0 };
+    distMap.set(key, { count: e.count + 1 });
   }
   const distribution: DistributionEntry[] = Array.from(distMap.entries())
-    .map(([label, { count, total }]) => ({ label, count, avgRanking: Math.round((total / count) * 10) / 10 }))
+    .map(([label, { count }]) => ({ label, count }))
     .sort((a, b) => b.count - a.count);
 
-  const monthMap = new Map<string, { newEntries: number; totalRanking: number; girls: string[] }>();
+  const monthMap = new Map<string, { newEntries: number; girls: string[] }>();
   for (const g of girls) {
     const month = effectiveStart(g).toISOString().slice(0, 7);
-    const e = monthMap.get(month) ?? { newEntries: 0, totalRanking: 0, girls: [] };
-    monthMap.set(month, { newEntries: e.newEntries + 1, totalRanking: e.totalRanking + g.ranking, girls: [...e.girls, g.name] });
+    const e = monthMap.get(month) ?? { newEntries: 0, girls: [] };
+    monthMap.set(month, { newEntries: e.newEntries + 1, girls: [...e.girls, g.name] });
   }
   const monthly: MonthlyStats[] = Array.from(monthMap.entries())
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([month, { newEntries, totalRanking, girls: mg }]) => ({
+    .map(([month, { newEntries, girls: mg }]) => ({
       month, newEntries, activeCount: girls.filter(g => g.status === "ACTIVE").length,
-      avgRanking: Math.round((totalRanking / newEntries) * 10) / 10, topGirl: mg[0] ?? null,
+      topGirl: mg[0] ?? null,
     }));
 
   if (view === "monthly") return NextResponse.json({ monthly });

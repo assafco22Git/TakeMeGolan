@@ -1,5 +1,6 @@
 export type Role = "OWNER" | "ADMIN";
 export type Status = "ACTIVE" | "PAST";
+export type Vibe = "good" | "bad" | "neutral";
 
 export interface Girl {
   id: string;
@@ -9,7 +10,7 @@ export interface Girl {
   occupation: string | null;
   startDate: string | null;
   endDate: string | null;
-  ranking: number;
+  vibe: Vibe;
   notes: string | null;
   status: Status;
   matchedDate: string | null;
@@ -30,7 +31,7 @@ export interface TimelineEntry {
   name: string;
   startMs: number;
   endMs: number;
-  ranking: number;
+  vibe: Vibe;
   status: Status;
   hasFirstDate: boolean;
 }
@@ -40,7 +41,7 @@ export interface LeaderboardEntry {
   name: string;
   origin: string | null;
   occupation: string | null;
-  ranking: number;
+  vibe: Vibe;
   durationDays: number;
   status: Status;
   hasFirstDate: boolean;
@@ -49,14 +50,12 @@ export interface LeaderboardEntry {
 export interface DistributionEntry {
   label: string;
   count: number;
-  avgRanking: number;
 }
 
 export interface MonthlyStats {
-  month: string; // "2024-01"
+  month: string;
   newEntries: number;
   activeCount: number;
-  avgRanking: number;
   topGirl: string | null;
 }
 

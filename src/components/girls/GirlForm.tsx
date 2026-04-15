@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import type { Girl } from "@/types";
 import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { MicButton } from "@/components/ui/MicButton";
+import { vibeColor, vibeEmoji, vibeLabel } from "@/lib/utils";
+import type { Vibe } from "@/types";
 
 interface GirlFormProps {
   initial?: Partial<Girl>;
@@ -124,7 +126,7 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
           origin: data.origin ?? prev.origin,
           hometown: data.hometown ?? prev.hometown,
           occupation: data.occupation ?? prev.occupation,
-          ranking: data.ranking != null ? String(data.ranking) : prev.ranking,
+          vibe: (["good", "bad", "neutral"].includes(data.vibe) ? data.vibe : prev.vibe) as Vibe,
           matchedApp: data.matchedApp ?? prev.matchedApp,
           matchedDate: data.matchedDate ?? prev.matchedDate,
           startDate: data.startDate ?? prev.startDate,
@@ -163,7 +165,7 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
     occupation: initial?.occupation || "",
     startDate: initial?.startDate ? (initial.startDate as string).slice(0, 10) : "",
     endDate: initial?.endDate ? initial.endDate.slice(0, 10) : "",
-    ranking: initial?.ranking?.toString() || "5",
+    vibe: (initial?.vibe as Vibe) || "neutral",
     notes: initial?.notes || "",
     matchedDate: initial?.matchedDate ? initial.matchedDate.slice(0, 10) : "",
     matchedApp: initial?.matchedApp || "",
@@ -194,7 +196,7 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
       occupation: form.occupation || null,
       startDate: form.startDate ? new Date(form.startDate + "T12:00:00Z").toISOString() : null,
       endDate: ongoing ? null : (form.endDate ? new Date(form.endDate + "T12:00:00Z").toISOString() : null),
-      ranking: parseFloat(form.ranking),
+      vibe: form.vibe,
       notes: form.notes || null,
       status: ongoing ? "ACTIVE" : "PAST",
       matchedDate: form.matchedDate ? new Date(form.matchedDate + "T12:00:00Z").toISOString() : null,
@@ -429,23 +431,30 @@ export default function GirlForm({ initial, girlId, mode, readOnly = false }: Gi
       </div>
 
       <div>
-        <label className={labelClass}>
-          Ranking: <span className="text-blue-400 font-bold">{parseFloat(form.ranking).toFixed(1)}/10</span>
-        </label>
-        <input
-          type="range"
-          min={0}
-          max={10}
-          step={0.1}
-          value={form.ranking}
-          onChange={(e) => set("ranking", e.target.value)}
-          className="w-full accent-blue-500"
-          disabled={readOnly}
-        />
-        <div className="flex justify-between text-xs text-slate-500 mt-1">
-          <span>0</span>
-          <span>5</span>
-          <span>10</span>
+        <label className={labelClass}>Vibe</label>
+        <div className="grid grid-cols-3 gap-3">
+          {(["good", "neutral", "bad"] as Vibe[]).map((v) => {
+            const selected = form.vibe === v;
+            return (
+              <button
+                key={v}
+                type="button"
+                disabled={readOnly}
+                onClick={() => set("vibe", v)}
+                className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                  readOnly ? "opacity-70 cursor-default" : "cursor-pointer"
+                }`}
+                style={{
+                  borderColor: selected ? vibeColor(v) : "transparent",
+                  backgroundColor: selected ? vibeColor(v) + "22" : (undefined),
+                  color: selected ? vibeColor(v) : undefined,
+                }}
+              >
+                <span className="text-2xl">{vibeEmoji(v)}</span>
+                <span>{vibeLabel(v)}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

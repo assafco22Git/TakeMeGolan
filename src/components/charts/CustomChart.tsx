@@ -32,7 +32,6 @@ const CustomTooltip = ({
     <div className="bg-[#1e2a3a] border border-slate-700 rounded-xl px-4 py-3 text-sm shadow-xl">
       <p className="font-bold text-white">{d.label}</p>
       <p className="text-slate-300">{d.count} girl{d.count !== 1 ? "s" : ""}</p>
-      <p className="text-blue-400">Avg ranking: {d.avgRanking}/10</p>
     </div>
   );
 };

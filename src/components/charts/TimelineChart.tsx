@@ -12,7 +12,7 @@ import {
   Bar,
 } from "recharts";
 import type { TimelineEntry } from "@/types";
-import { rankingColor } from "@/lib/utils";
+import { vibeColor, vibeEmoji, vibeLabel } from "@/lib/utils";
 
 type RangeKey = "1M" | "3M" | "6M" | "1Y" | "All";
 
@@ -48,7 +48,7 @@ const CustomTooltip = ({
   active, payload, xMin,
 }: {
   active?: boolean;
-  payload?: { payload: { name: string; ranking: number; startMs: number; endMs: number; offset: number; duration: number; status: string; hasFirstDate: boolean } }[];
+  payload?: { payload: { name: string; vibe: string; startMs: number; endMs: number; offset: number; duration: number; status: string; hasFirstDate: boolean } }[];
   xMin: number;
 }) => {
   if (!active || !payload?.length) return null;
@@ -70,7 +70,7 @@ const CustomTooltip = ({
       <p className="text-slate-400">
         {formatDayFull(d.startMs)} → {isActive ? "Now" : formatDayFull(d.endMs)}
       </p>
-      <p className="text-blue-400 font-semibold">Ranking: {d.ranking}/10</p>
+      <p className="font-semibold" style={{ color: vibeColor(d.vibe) }}>{vibeEmoji(d.vibe)} {vibeLabel(d.vibe)}</p>
       <p className="text-slate-400">{Math.floor((d.endMs - d.startMs) / 86400000)} days</p>
     </div>
   );
@@ -167,7 +167,7 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
         return {
           name: d.name,
           id: d.id,
-          ranking: d.ranking,
+          vibe: d.vibe,
           status: d.status,
           hasFirstDate: d.hasFirstDate,
           startMs: d.startMs,
@@ -277,7 +277,7 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
             barSize={12}
           >
             {chartData.map((entry) => (
-              <Cell key={entry.id} fill={rankingColor(entry.ranking)} fillOpacity={0.85} />
+              <Cell key={entry.id} fill={vibeColor(entry.vibe)} fillOpacity={0.85} />
             ))}
           </Bar>
         </ComposedChart>

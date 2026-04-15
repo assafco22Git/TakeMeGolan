@@ -23,7 +23,7 @@ model Girl {
   occupation    String?
   startDate     DateTime?
   endDate       DateTime?
-  ranking       Float
+  vibe          String    @default("neutral")
   notes         String?
   status        Status    @default(ACTIVE)
   matchedDate   DateTime?

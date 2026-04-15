@@ -2,25 +2,24 @@ import { redirect } from "next/navigation";
 import { getRole } from "@/lib/role";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { rankingColor } from "@/lib/utils";
+import { vibeEmoji, vibeOrder } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-interface GirlRow { id: string; name: string; startDate: Date | null; matchedDate: Date | null; ranking: number; }
+interface GirlRow { id: string; name: string; startDate: Date | null; matchedDate: Date | null; vibe: string; }
 
 async function getMonthlyData() {
   try {
     const girls = (await prisma.girl.findMany({ orderBy: { matchedDate: "asc" } })) as GirlRow[];
-    const monthMap = new Map<string, { month: string; label: string; newGirls: { id: string; name: string; ranking: number; hasFirstDate: boolean }[]; totalRanking: number }>();
+    const monthMap = new Map<string, { month: string; label: string; newGirls: { id: string; name: string; vibe: string; hasFirstDate: boolean }[] }>();
 
     for (const g of girls) {
       const ref = g.startDate ?? g.matchedDate;
       if (!ref) continue;
       const month = ref.toISOString().slice(0, 7);
       const label = new Date(ref).toLocaleDateString("en-US", { month: "long", year: "numeric" });
-      const existing = monthMap.get(month) ?? { month, label, newGirls: [], totalRanking: 0 };
-      existing.newGirls.push({ id: g.id, name: g.name, ranking: g.ranking, hasFirstDate: !!g.startDate });
-      existing.totalRanking += g.ranking;
+      const existing = monthMap.get(month) ?? { month, label, newGirls: [] };
+      existing.newGirls.push({ id: g.id, name: g.name, vibe: g.vibe, hasFirstDate: !!g.startDate });
       monthMap.set(month, existing);
     }
 
@@ -28,8 +27,7 @@ async function getMonthlyData() {
       .sort((a, b) => b.month.localeCompare(a.month))
       .map((m) => ({
         ...m,
-        avgRanking: Math.round((m.totalRanking / m.newGirls.length) * 10) / 10,
-        topGirl: [...m.newGirls].sort((a, b) => b.ranking - a.ranking)[0] ?? null,
+        topGirl: [...m.newGirls].sort((a, b) => vibeOrder(a.vibe) - vibeOrder(b.vibe))[0] ?? null,
       }));
   } catch {
     return [];
@@ -73,7 +71,7 @@ export default async function MonthlyPage() {
               <div>
                 <h2 className="text-slate-900 dark:text-white font-semibold text-lg">{m.label}</h2>
                 <p className="text-slate-500 text-xs">
-                  {m.newGirls.length} new entr{m.newGirls.length === 1 ? "y" : "ies"} · avg {m.avgRanking}/10
+                  {m.newGirls.length} new entr{m.newGirls.length === 1 ? "y" : "ies"}
                 </p>
               </div>
               {m.topGirl && (
@@ -89,7 +87,7 @@ export default async function MonthlyPage() {
             <div className="flex flex-wrap gap-2">
               {m.newGirls.map((g) => (
                 <Link key={g.id} href={`/girls/${g.id}`} className="flex items-center gap-2 bg-slate-100 dark:bg-[#0a0f1e] border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 hover:border-slate-400 dark:hover:border-slate-600 transition-colors">
-                  <span className="text-xs font-bold" style={{ color: rankingColor(g.ranking) }}>{g.ranking}</span>
+                  <span className="text-base leading-none">{vibeEmoji(g.vibe)}</span>
                   <span className={`text-sm ${!g.hasFirstDate ? "text-red-500 dark:text-red-400" : "text-slate-700 dark:text-slate-300"}`}>{g.name}</span>
                   {!g.hasFirstDate && <span className="text-xs">🚩</span>}
                 </Link>

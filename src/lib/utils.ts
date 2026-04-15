@@ -13,11 +13,30 @@ export function formatDate(date: Date | string | null | undefined): string {
   });
 }
 
-export function rankingColor(ranking: number): string {
-  if (ranking >= 9) return "#f59e0b"; // gold
-  if (ranking >= 7) return "#3b82f6"; // blue
-  if (ranking >= 5) return "#6366f1"; // indigo
-  return "#64748b"; // slate
+export type Vibe = "good" | "bad" | "neutral";
+
+export function vibeColor(vibe: Vibe | string): string {
+  if (vibe === "good") return "#f472b6";    // pink
+  if (vibe === "bad") return "#1e40af";     // dark blue
+  return "#f59e0b";                         // yellow (neutral)
+}
+
+export function vibeEmoji(vibe: Vibe | string): string {
+  if (vibe === "good") return "💗";
+  if (vibe === "bad") return "😞";
+  return "🫠";
+}
+
+export function vibeLabel(vibe: Vibe | string): string {
+  if (vibe === "good") return "Good vibes";
+  if (vibe === "bad") return "Bad vibes";
+  return "Neutral";
+}
+
+export function vibeOrder(vibe: Vibe | string): number {
+  if (vibe === "good") return 0;
+  if (vibe === "neutral") return 1;
+  return 2;
 }
 
 export function durationInDays(start: Date | string, end?: Date | string | null): number {
