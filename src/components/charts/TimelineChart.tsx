@@ -144,7 +144,7 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
   const xMin = globalMin - pad;
   const xMax = globalMax + pad;
   const domainSize = xMax - xMin;
-  // Tick positions aligned to every month boundary (used by both XAxis and reference lines)
+  // Month boundary positions (for reference lines)
   const monthTicks = useMemo(() => {
     const start = new Date(globalMin);
     const end = new Date(globalMax);
@@ -157,6 +157,12 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
     }
     return ticks;
   }, [globalMin, globalMax, xMin, domainSize]);
+
+  // Label ticks = midpoints between consecutive month boundaries (centred in each month column)
+  const labelTicks = useMemo(() => {
+    const boundaries = [0, ...monthTicks, domainSize];
+    return boundaries.slice(0, -1).map((b, i) => (b + boundaries[i + 1]) / 2);
+  }, [monthTicks, domainSize]);
 
   // Year boundary reference lines
   const yearMarks = useMemo(() => {
@@ -220,7 +226,7 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
             {/* Hidden XAxis keeps the same bottom margin as the right panel */}
             <XAxis
               {...xAxisBase}
-              ticks={monthTicks}
+              ticks={labelTicks}
               tick={{ fill: "transparent", fontSize: 11 }}
               axisLine={{ stroke: "transparent" }}
               tickLine={false}
@@ -254,8 +260,10 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
             >
               <XAxis
                 {...xAxisBase}
-                ticks={monthTicks}
-                tickFormatter={(v) => formatDay(xMin + v)}
+                ticks={labelTicks}
+                tickFormatter={(v) =>
+                  new Date(xMin + v).toLocaleDateString("en-US", { month: "short" })
+                }
                 tick={{ fill: "#94a3b8", fontSize: 11 }}
                 axisLine={{ stroke: "#334155" }}
                 tickLine={false}
