@@ -144,7 +144,19 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
   const xMin = globalMin - pad;
   const xMax = globalMax + pad;
   const domainSize = xMax - xMin;
-  const tickCount = Math.max(6, Math.min(30, Math.ceil(totalDays / 30)));
+  // Tick positions aligned to every month boundary (used by both XAxis and reference lines)
+  const monthTicks = useMemo(() => {
+    const start = new Date(globalMin);
+    const end = new Date(globalMax);
+    const ticks: number[] = [];
+    const cur = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+    while (cur <= end) {
+      const x = cur.getTime() - xMin;
+      if (x > 0 && x < domainSize) ticks.push(x);
+      cur.setMonth(cur.getMonth() + 1);
+    }
+    return ticks;
+  }, [globalMin, globalMax, xMin, domainSize]);
 
   // Year boundary reference lines
   const yearMarks = useMemo(() => {
@@ -159,21 +171,8 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
     return marks;
   }, [globalMin, globalMax, xMin, domainSize]);
 
-  // Month boundary reference lines (skip Jan — already covered by year marks)
-  const monthMarks = useMemo(() => {
-    const start = new Date(globalMin);
-    const end = new Date(globalMax);
-    const marks: { key: string; x: number }[] = [];
-    const cur = new Date(start.getFullYear(), start.getMonth() + 1, 1);
-    while (cur <= end) {
-      if (cur.getMonth() !== 0) { // skip January (year line handles it)
-        const x = cur.getTime() - xMin;
-        if (x > 0 && x < domainSize) marks.push({ key: cur.toISOString(), x });
-      }
-      cur.setMonth(cur.getMonth() + 1);
-    }
-    return marks;
-  }, [globalMin, globalMax, xMin, domainSize]);
+  // Month lines = all monthTicks except those that coincide with a year boundary
+  const yearXSet = useMemo(() => new Set(yearMarks.map((m) => m.x)), [yearMarks]);
 
   // Scroll to most-recent on mount
   useEffect(() => {
@@ -221,6 +220,7 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
             {/* Hidden XAxis keeps the same bottom margin as the right panel */}
             <XAxis
               {...xAxisBase}
+              ticks={monthTicks}
               tick={{ fill: "transparent", fontSize: 11 }}
               axisLine={{ stroke: "transparent" }}
               tickLine={false}
@@ -254,8 +254,8 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
             >
               <XAxis
                 {...xAxisBase}
+                ticks={monthTicks}
                 tickFormatter={(v) => formatDay(xMin + v)}
-                tickCount={tickCount}
                 tick={{ fill: "#94a3b8", fontSize: 11 }}
                 axisLine={{ stroke: "#334155" }}
                 tickLine={false}
@@ -288,10 +288,10 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
                 />
               )}
 
-              {/* Month boundary markers */}
-              {monthMarks.map(({ key, x }) => (
+              {/* Month boundary markers (skip year boundaries) */}
+              {monthTicks.filter((x) => !yearXSet.has(x)).map((x) => (
                 <ReferenceLine
-                  key={key}
+                  key={x}
                   x={x}
                   stroke="#334155"
                   strokeWidth={1}
