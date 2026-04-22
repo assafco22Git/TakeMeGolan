@@ -33,7 +33,7 @@ export default async function GirlDetailPage({ params }: { params: Promise<{ id:
     <div className="px-4 py-6 md:px-8 max-w-2xl mx-auto w-full">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className={`text-2xl font-bold flex items-center gap-2 ${!girl.startDate ? "text-red-500 dark:text-red-400" : "text-slate-900 dark:text-white"}`}>
+          <h1 className={`text-2xl font-bold flex items-center gap-2 ${!girl.startDate && girl.status === "PAST" ? "text-red-500 dark:text-red-400" : "text-slate-900 dark:text-white"}`}>
             {girl.name}
             {!girl.startDate && <span title="No first date yet">🚩</span>}
           </h1>

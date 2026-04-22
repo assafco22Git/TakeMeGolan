@@ -82,7 +82,9 @@ export default async function GirlsPage() {
 function GirlCard({ girl }: { girl: { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date | null; endDate: Date | null; vibe: string; status: string } }) {
   const days = durationInDays(girl.startDate ?? new Date(), girl.endDate);
   const color = vibeColor(girl.vibe);
-  const noFirstDate = !girl.startDate || girl.startDate > new Date();
+  // Red name = ended relationship that never had a first date
+  const noFirstDate = !girl.startDate;
+  const isRed = noFirstDate && girl.status === "PAST";
 
   return (
     <Link href={`/girls/${girl.id}`}>
@@ -92,7 +94,7 @@ function GirlCard({ girl }: { girl: { id: string; name: string; origin: string |
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className={`font-semibold truncate ${noFirstDate ? "text-red-500 dark:text-red-400" : "text-slate-900 dark:text-white"}`}>{girl.name}</p>
+            <p className={`font-semibold truncate ${isRed ? "text-red-500 dark:text-red-400" : "text-slate-900 dark:text-white"}`}>{girl.name}</p>
             {girl.status === "ACTIVE" && <span className="flex-shrink-0 w-2 h-2 rounded-full bg-green-400" />}
             {noFirstDate && <span className="flex-shrink-0 text-base" title="No first date yet">🚩</span>}
           </div>

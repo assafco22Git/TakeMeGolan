@@ -130,7 +130,7 @@ export default function BreaksSection({ girlId, initialBreaks, role }: Props) {
       {role === "OWNER" && !adding && (
         <button
           onClick={() => setAdding(true)}
-          className="flex items-center gap-2 text-sm font-semibold text-amber-500 hover:text-amber-400 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-amber-500/60 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 hover:border-amber-500 text-sm font-semibold transition-all"
         >
           <span className="text-base">☕</span> We were on a break!
         </button>

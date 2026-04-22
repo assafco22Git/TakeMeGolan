@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useEffect, useState } from "react";
+import { useMemo, useRef, useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   ComposedChart,
   XAxis,
@@ -82,29 +83,39 @@ const CustomTooltip = ({
 };
 
 function CustomYTick({
-  x, y, payload, noFirstDateMap, isDark,
+  x, y, payload, redMap, flagMap, isDark, nameToIdMap, onNavigate,
 }: {
   x?: string | number; y?: string | number;
   payload?: { value: string };
-  noFirstDateMap: Map<string, boolean>;
+  redMap: Map<string, boolean>;
+  flagMap: Map<string, boolean>;
   isDark: boolean;
+  nameToIdMap: Map<string, string>;
+  onNavigate: (id: string) => void;
 }) {
   const name = payload?.value ?? "";
-  const noFirstDate = noFirstDateMap.get(name) ?? false;
-  const textColor = noFirstDate ? "#f87171" : isDark ? "#e2e8f0" : "#0f172a";
+  const isRed = redMap.get(name) ?? false;
+  const hasFlag = flagMap.get(name) ?? false;
+  const id = nameToIdMap.get(name);
+  const textColor = isRed ? "#f87171" : isDark ? "#e2e8f0" : "#0f172a";
   return (
-    <g transform={`translate(${x},${y})`}>
+    <g
+      transform={`translate(${x},${y})`}
+      onClick={id ? () => onNavigate(id) : undefined}
+      style={{ cursor: id ? "pointer" : "default" }}
+    >
       <text
-        x={noFirstDate ? -16 : 0}
+        x={hasFlag ? -16 : 0}
         dy={4}
         textAnchor="end"
         fill={textColor}
         fontSize={13}
         fontWeight={600}
+        textDecoration={id ? "underline" : undefined}
       >
         {name}
       </text>
-      {noFirstDate && (
+      {hasFlag && (
         <text x={0} dy={4} textAnchor="end" fontSize={11}>🚩</text>
       )}
     </g>
@@ -126,8 +137,21 @@ function useDarkMode() {
 
 export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
   const isDark = useDarkMode();
-  const noFirstDateMap = useMemo(
+  const router = useRouter();
+  const onNavigate = useCallback((id: string) => router.push(`/girls/${id}`), [router]);
+
+  // Red = PAST girl who never had a first date
+  const redMap = useMemo(
+    () => new Map(data.map((d) => [d.name, !d.hasFirstDate && d.status === "PAST"])),
+    [data]
+  );
+  // Flag (🚩) = any girl without a first date
+  const flagMap = useMemo(
     () => new Map(data.map((d) => [d.name, !d.hasFirstDate])),
+    [data]
+  );
+  const nameToIdMap = useMemo(
+    () => new Map(data.map((d) => [d.name, d.id])),
     [data]
   );
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -291,7 +315,7 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
               type="category"
               dataKey="name"
               tick={(props) => (
-                <CustomYTick {...props} noFirstDateMap={noFirstDateMap} isDark={isDark} />
+                <CustomYTick {...props} redMap={redMap} flagMap={flagMap} isDark={isDark} nameToIdMap={nameToIdMap} onNavigate={onNavigate} />
               )}
               width={LABEL_WIDTH - 8}
               axisLine={false}
