@@ -6,15 +6,28 @@ import GirlForm from "@/components/girls/GirlForm";
 import DeleteButton from "@/components/girls/DeleteButton";
 import CommentsSection from "@/components/girls/CommentsSection";
 import EndRelationshipButton from "@/components/girls/EndRelationshipButton";
+import BreaksSection from "@/components/girls/BreaksSection";
 import { formatDate } from "@/lib/utils";
+import type { RelationshipBreak } from "@/types";
 
 export default async function GirlDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const role = await getRole();
   if (!role) redirect("/login");
 
   const { id } = await params;
-  const girl = await prisma.girl.findUnique({ where: { id } });
+  const girl = await prisma.girl.findUnique({
+    where: { id },
+    include: { breaks: { orderBy: { startDate: "asc" } } },
+  });
   if (!girl) notFound();
+
+  const initialBreaks: RelationshipBreak[] = (girl.breaks ?? []).map((b) => ({
+    id: b.id,
+    girlId: b.girlId,
+    startDate: b.startDate.toISOString(),
+    endDate: b.endDate.toISOString(),
+    createdAt: b.createdAt.toISOString(),
+  }));
 
   return (
     <div className="px-4 py-6 md:px-8 max-w-2xl mx-auto w-full">
@@ -54,6 +67,10 @@ export default async function GirlDetailPage({ params }: { params: Promise<{ id:
           <EndRelationshipButton girlId={id} />
         </div>
       )}
+
+      <div className="bg-white dark:bg-[#111827] rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
+        <BreaksSection girlId={id} initialBreaks={initialBreaks} role={role} />
+      </div>
 
       <div className="bg-white dark:bg-[#111827] rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
         <h2 className="text-slate-900 dark:text-white font-semibold mb-4">Comments</h2>

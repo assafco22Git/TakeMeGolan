@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { ROLE_COOKIE } from "@/lib/role";
 import { vibeOrder } from "@/lib/utils";
-import type { TimelineEntry, LeaderboardEntry, DistributionEntry, MonthlyStats, ChartGroupBy } from "@/types";
+import type { TimelineEntry, TimelinePeriod, LeaderboardEntry, DistributionEntry, MonthlyStats, ChartGroupBy } from "@/types";
 
 async function getRole() {
   const store = await cookies();
@@ -24,21 +24,46 @@ export async function GET(req: NextRequest) {
   const view = searchParams.get("view") || "all";
   const groupBy = (searchParams.get("groupBy") || "origin") as ChartGroupBy;
 
-  interface GirlRow { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date | null; endDate: Date | null; matchedDate: Date | null; vibe: string; status: string; matchedApp: string | null; }
-  const girls = (await prisma.girl.findMany({ orderBy: { matchedDate: "asc" } })) as GirlRow[];
+  interface BreakRow { id: string; girlId: string; startDate: Date; endDate: Date; }
+  interface GirlRow { id: string; name: string; origin: string | null; occupation: string | null; startDate: Date | null; endDate: Date | null; matchedDate: Date | null; vibe: string; status: string; matchedApp: string | null; breaks: BreakRow[]; }
+  const girls = (await prisma.girl.findMany({
+    orderBy: { matchedDate: "asc" },
+    include: { breaks: { orderBy: { startDate: "asc" } } },
+  })) as GirlRow[];
 
   function effectiveStart(g: GirlRow): Date {
     return g.startDate ?? g.matchedDate ?? new Date();
   }
 
-  const timeline: TimelineEntry[] = girls.map((g) => ({
-    id: g.id, name: g.name,
-    startMs: effectiveStart(g).getTime(),
-    endMs: (g.endDate ?? new Date()).getTime(),
-    vibe: g.vibe as "good" | "bad" | "neutral",
-    status: g.status as "ACTIVE" | "PAST",
-    hasFirstDate: g.startDate !== null,
-  }));
+  function computePeriods(g: GirlRow): TimelinePeriod[] {
+    const start = effectiveStart(g).getTime();
+    const end = (g.endDate ?? new Date()).getTime();
+    if (!g.breaks.length) return [{ startMs: start, endMs: end }];
+
+    const periods: TimelinePeriod[] = [];
+    let cur = start;
+    for (const brk of g.breaks) {
+      const brkStart = brk.startDate.getTime();
+      const brkEnd = brk.endDate.getTime();
+      if (brkStart > cur) periods.push({ startMs: cur, endMs: brkStart });
+      cur = brkEnd;
+    }
+    if (cur < end) periods.push({ startMs: cur, endMs: end });
+    return periods.length ? periods : [{ startMs: start, endMs: end }];
+  }
+
+  const timeline: TimelineEntry[] = girls.map((g) => {
+    const periods = computePeriods(g);
+    return {
+      id: g.id, name: g.name,
+      startMs: periods[0].startMs,
+      endMs: periods[periods.length - 1].endMs,
+      periods,
+      vibe: g.vibe as "good" | "bad" | "neutral",
+      status: g.status as "ACTIVE" | "PAST",
+      hasFirstDate: g.startDate !== null,
+    };
+  });
 
   const leaderboard: LeaderboardEntry[] = [...girls]
     .sort((a, b) => vibeOrder(a.vibe) - vibeOrder(b.vibe))

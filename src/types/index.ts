@@ -26,14 +26,28 @@ export interface User {
   role: Role;
 }
 
+export interface TimelinePeriod {
+  startMs: number;
+  endMs: number;
+}
+
 export interface TimelineEntry {
   id: string;
   name: string;
-  startMs: number;
-  endMs: number;
+  startMs: number;   // first period start
+  endMs: number;     // last period end
+  periods: TimelinePeriod[];
   vibe: Vibe;
   status: Status;
   hasFirstDate: boolean;
+}
+
+export interface RelationshipBreak {
+  id: string;
+  girlId: string;
+  startDate: string;
+  endDate: string;
+  createdAt: string;
 }
 
 export interface LeaderboardEntry {

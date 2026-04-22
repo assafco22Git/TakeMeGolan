@@ -8,6 +8,7 @@ import { vibeOrder } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
+interface BreakRow { startDate: Date; endDate: Date; }
 interface GirlRow {
   id: string;
   name: string;
@@ -18,12 +19,16 @@ interface GirlRow {
   matchedDate: Date | null;
   vibe: string;
   status: string;
+  breaks: BreakRow[];
 }
 
 async function getStats() {
   let girls: GirlRow[] = [];
   try {
-    girls = (await prisma.girl.findMany({ orderBy: { matchedDate: "asc" } })) as GirlRow[];
+    girls = (await prisma.girl.findMany({
+      orderBy: { matchedDate: "asc" },
+      include: { breaks: { orderBy: { startDate: "asc" } } },
+    })) as GirlRow[];
   } catch {
     return { timeline: [], leaderboard: [], distribution: [], goodCount: 0 };
   }
@@ -37,15 +42,35 @@ async function getStats() {
     return g.startDate ?? g.matchedDate ?? new Date();
   }
 
-  const timeline = girls.map((g) => ({
-    id: g.id,
-    name: g.name,
-    startMs: effectiveStart(g).getTime(),
-    endMs: (g.endDate ?? new Date()).getTime(),
-    vibe: g.vibe as "good" | "bad" | "neutral",
-    status: g.status as "ACTIVE" | "PAST",
-    hasFirstDate: g.startDate !== null,
-  }));
+  function computePeriods(g: GirlRow) {
+    const start = effectiveStart(g).getTime();
+    const end = (g.endDate ?? new Date()).getTime();
+    if (!g.breaks?.length) return [{ startMs: start, endMs: end }];
+    const periods: { startMs: number; endMs: number }[] = [];
+    let cur = start;
+    for (const brk of g.breaks) {
+      const bs = brk.startDate.getTime();
+      const be = brk.endDate.getTime();
+      if (bs > cur) periods.push({ startMs: cur, endMs: bs });
+      cur = be;
+    }
+    if (cur < end) periods.push({ startMs: cur, endMs: end });
+    return periods.length ? periods : [{ startMs: start, endMs: end }];
+  }
+
+  const timeline = girls.map((g) => {
+    const periods = computePeriods(g);
+    return {
+      id: g.id,
+      name: g.name,
+      startMs: periods[0].startMs,
+      endMs: periods[periods.length - 1].endMs,
+      periods,
+      vibe: g.vibe as "good" | "bad" | "neutral",
+      status: g.status as "ACTIVE" | "PAST",
+      hasFirstDate: g.startDate !== null,
+    };
+  });
 
   const leaderboard = [...girls]
     .sort((a, b) => vibeOrder(a.vibe) - vibeOrder(b.vibe))

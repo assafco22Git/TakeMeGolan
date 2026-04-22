@@ -11,40 +11,46 @@ import {
   Cell,
   Bar,
 } from "recharts";
-import type { TimelineEntry } from "@/types";
+import type { TimelineEntry, TimelinePeriod } from "@/types";
 import { vibeColor, vibeEmoji, vibeLabel } from "@/lib/utils";
 
-const LABEL_WIDTH = 120;
+const LABEL_WIDTH = 82;
 const MARGIN_TOP = 8;
 const MARGIN_BOTTOM = 32;
 const ROW_HEIGHT = 36;
+const BAR_SIZE = 12;
 
 function formatDay(ms: number) {
   return new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
-
 function formatDayFull(ms: number) {
   return new Date(ms).toLocaleDateString("en-US", {
     month: "short", day: "numeric", year: "numeric",
   });
 }
 
+type ChartEntry = {
+  name: string; id: string; vibe: string; status: string;
+  hasFirstDate: boolean; startMs: number; endMs: number;
+  periods: TimelinePeriod[];
+  [key: string]: string | number | boolean | TimelinePeriod[];
+};
+
 const CustomTooltip = ({
-  active,
-  payload,
-  xMin,
+  active, payload,
 }: {
   active?: boolean;
-  payload?: { payload: { name: string; vibe: string; startMs: number; endMs: number; status: string; hasFirstDate: boolean } }[];
-  xMin: number;
+  payload?: { payload: ChartEntry }[];
 }) => {
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
   if (!d) return null;
   const isActive = d.status === "ACTIVE";
+  const periods: TimelinePeriod[] = d.periods ?? [];
+
   return (
-    <div className="bg-[#1e2a3a] border border-slate-700 rounded-xl px-4 py-3 text-sm shadow-xl">
-      <div className="flex items-center gap-2 mb-1">
+    <div className="bg-[#1e2a3a] border border-slate-700 rounded-xl px-4 py-3 text-sm shadow-xl max-w-[220px]">
+      <div className="flex items-center gap-2 mb-2">
         <p className="font-bold text-white">{d.name}</p>
         {!d.hasFirstDate && <span title="No first date yet">🚩</span>}
         {isActive && (
@@ -54,26 +60,31 @@ const CustomTooltip = ({
           </>
         )}
       </div>
-      <p className="text-slate-400">
-        {formatDayFull(d.startMs)} → {isActive ? "Now" : formatDayFull(d.endMs)}
-      </p>
+      <div className="space-y-1 mb-2">
+        {periods.map((p, i) => (
+          <p key={i} className="text-slate-400 text-xs">
+            {periods.length > 1 && (
+              <span className="text-amber-400 mr-1">{i === 0 ? "▶" : "↩"}</span>
+            )}
+            {formatDayFull(p.startMs)} →{" "}
+            {i === periods.length - 1 && isActive ? "Now" : formatDayFull(p.endMs)}
+          </p>
+        ))}
+      </div>
+      {periods.length > 1 && (
+        <p className="text-xs text-amber-400 mb-1">☕ {periods.length - 1} break{periods.length > 2 ? "s" : ""}</p>
+      )}
       <p className="font-semibold" style={{ color: vibeColor(d.vibe) }}>
         {vibeEmoji(d.vibe)} {vibeLabel(d.vibe)}
       </p>
-      <p className="text-slate-400">{Math.floor((d.endMs - d.startMs) / 86400000)} days</p>
     </div>
   );
 };
 
 function CustomYTick({
-  x,
-  y,
-  payload,
-  noFirstDateMap,
-  isDark,
+  x, y, payload, noFirstDateMap, isDark,
 }: {
-  x?: string | number;
-  y?: string | number;
+  x?: string | number; y?: string | number;
   payload?: { value: string };
   noFirstDateMap: Map<string, boolean>;
   isDark: boolean;
@@ -94,9 +105,7 @@ function CustomYTick({
         {name}
       </text>
       {noFirstDate && (
-        <text x={0} dy={4} textAnchor="end" fontSize={11}>
-          🚩
-        </text>
+        <text x={0} dy={4} textAnchor="end" fontSize={11}>🚩</text>
       )}
     </g>
   );
@@ -136,7 +145,6 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
   const globalMax = Math.max(...data.map((d) => d.endMs));
   const totalDays = Math.max(1, Math.ceil((globalMax - globalMin) / 86400000));
 
-  // ~5px per day, minimum 700px for the chart content (not counting the label panel)
   const chartWidth = Math.max(700, totalDays * 5);
   const chartHeight = Math.max(200, data.length * ROW_HEIGHT + MARGIN_TOP + MARGIN_BOTTOM + 24);
 
@@ -144,7 +152,8 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
   const xMin = globalMin - pad;
   const xMax = globalMax + pad;
   const domainSize = xMax - xMin;
-  // Month boundary positions (for reference lines)
+
+  // Month boundary positions (reference lines + label ticks)
   const monthTicks = useMemo(() => {
     const start = new Date(globalMin);
     const end = new Date(globalMax);
@@ -158,7 +167,7 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
     return ticks;
   }, [globalMin, globalMax, xMin, domainSize]);
 
-  // Label ticks = midpoints between consecutive month boundaries (centred in each month column)
+  // Labels centred in each month column
   const labelTicks = useMemo(() => {
     const boundaries = [0, ...monthTicks, domainSize];
     return boundaries.slice(0, -1).map((b, i) => (b + boundaries[i + 1]) / 2);
@@ -177,45 +186,92 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
     return marks;
   }, [globalMin, globalMax, xMin, domainSize]);
 
-  // Month lines = all monthTicks except those that coincide with a year boundary
   const yearXSet = useMemo(() => new Set(yearMarks.map((m) => m.x)), [yearMarks]);
 
-  // Scroll to most-recent on mount
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
     }
   }, []);
 
-  const chartData = useMemo(
-    () =>
-      data.map((d) => ({
-        name: d.name,
-        id: d.id,
-        vibe: d.vibe,
-        status: d.status,
+  // Flatten periods into stacked bar fields: seg_off, seg_d0, seg_g0, seg_d1, …
+  const { chartData, maxPeriods } = useMemo(() => {
+    const maxP = Math.max(1, ...data.map((d) => d.periods?.length ?? 1));
+    const entries: ChartEntry[] = data.map((d) => {
+      const periods: TimelinePeriod[] = d.periods?.length
+        ? d.periods
+        : [{ startMs: d.startMs, endMs: d.endMs }];
+
+      const entry: ChartEntry = {
+        name: d.name, id: d.id, vibe: d.vibe, status: d.status,
         hasFirstDate: d.hasFirstDate,
-        startMs: d.startMs,
-        endMs: d.endMs,
-        offset: d.startMs - xMin,
-        duration: Math.max(d.endMs - d.startMs, 86400000),
-      })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [data]
-  );
+        startMs: periods[0].startMs,
+        endMs: periods[periods.length - 1].endMs,
+        periods,
+        seg_off: periods[0].startMs - xMin,
+      };
+      for (let i = 0; i < maxP; i++) {
+        const p = periods[i];
+        entry[`seg_d${i}`] = p ? Math.max(p.endMs - p.startMs, 3600000) : 0;
+        if (i < maxP - 1) {
+          const next = periods[i + 1];
+          entry[`seg_g${i}`] = p && next ? Math.max(next.startMs - p.endMs, 0) : 0;
+        }
+      }
+      return entry;
+    });
+    return { chartData: entries, maxPeriods: maxP };
+  }, [data, xMin]);
 
   const nowRelative = now - xMin;
 
-  // Shared XAxis props ensure identical tick-label height in both panels
   const xAxisBase = {
     type: "number" as const,
     domain: [0, domainSize] as [number, number],
     fontSize: 11,
   };
 
+  // Build period bar sets for the right panel
+  const periodBars = Array.from({ length: maxPeriods }, (_, i) => [
+    <Bar
+      key={`d${i}`}
+      dataKey={`seg_d${i}`}
+      stackId="timeline"
+      barSize={BAR_SIZE}
+      isAnimationActive={false}
+      radius={4}
+    >
+      {chartData.map((e) => (
+        <Cell
+          key={String(e.id) + i}
+          fill={Number(e[`seg_d${i}`]) > 0 ? vibeColor(String(e.vibe)) : "transparent"}
+          fillOpacity={Number(e[`seg_d${i}`]) > 0 ? 0.85 : 0}
+        />
+      ))}
+    </Bar>,
+    i < maxPeriods - 1 ? (
+      <Bar
+        key={`g${i}`}
+        dataKey={`seg_g${i}`}
+        stackId="timeline"
+        fill="transparent"
+        isAnimationActive={false}
+        barSize={BAR_SIZE}
+      />
+    ) : null,
+  ]).flat();
+
+  // Mirror bars for the label panel (all invisible, same structure)
+  const mirrorBars = Array.from({ length: maxPeriods }, (_, i) => [
+    <Bar key={`d${i}-m`} dataKey={`seg_d${i}`} stackId="timeline" fill="transparent" isAnimationActive={false} barSize={BAR_SIZE} opacity={0} />,
+    i < maxPeriods - 1
+      ? <Bar key={`g${i}-m`} dataKey={`seg_g${i}`} stackId="timeline" fill="transparent" isAnimationActive={false} barSize={BAR_SIZE} opacity={0} />
+      : null,
+  ]).flat();
+
   return (
     <div className="flex w-full">
-      {/* ── Fixed label panel (does NOT scroll) ── */}
+      {/* ── Fixed label panel ── */}
       <div className="flex-shrink-0 z-10" style={{ width: LABEL_WIDTH }}>
         <ResponsiveContainer width="100%" height={chartHeight}>
           <ComposedChart
@@ -223,7 +279,6 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
             data={chartData}
             margin={{ top: MARGIN_TOP, right: 0, bottom: MARGIN_BOTTOM, left: 8 }}
           >
-            {/* Hidden XAxis — same height prop as right panel to keep drawing areas in sync */}
             <XAxis
               {...xAxisBase}
               ticks={labelTicks}
@@ -236,19 +291,14 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
               type="category"
               dataKey="name"
               tick={(props) => (
-                <CustomYTick
-                  {...props}
-                  noFirstDateMap={noFirstDateMap}
-                  isDark={isDark}
-                />
+                <CustomYTick {...props} noFirstDateMap={noFirstDateMap} isDark={isDark} />
               )}
               width={LABEL_WIDTH - 8}
               axisLine={false}
               tickLine={false}
             />
-            {/* Invisible bars mirror the right panel so Recharts uses identical row spacing */}
-            <Bar dataKey="offset" stackId="timeline" fill="transparent" isAnimationActive={false} barSize={12} opacity={0} />
-            <Bar dataKey="duration" stackId="timeline" fill="transparent" isAnimationActive={false} barSize={12} opacity={0} />
+            <Bar key="off-m" dataKey="seg_off" stackId="timeline" fill="transparent" isAnimationActive={false} barSize={BAR_SIZE} opacity={0} />
+            {mirrorBars}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -273,7 +323,6 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
                 axisLine={{ stroke: "#334155" }}
                 tickLine={false}
               />
-              {/* YAxis hidden — labels rendered in the left panel */}
               <YAxis
                 type="category"
                 dataKey="name"
@@ -282,73 +331,45 @@ export default function TimelineChart({ data }: { data: TimelineEntry[] }) {
                 axisLine={false}
                 tickLine={false}
               />
-              <Tooltip content={<CustomTooltip xMin={xMin} />} />
+              <Tooltip content={<CustomTooltip />} />
 
-              {/* Today marker */}
+              {/* Today */}
               {nowRelative >= 0 && nowRelative <= domainSize && (
                 <ReferenceLine
                   x={nowRelative}
                   stroke="#f59e0b"
                   strokeWidth={2}
                   strokeDasharray="4 3"
-                  label={{
-                    value: "Today",
-                    position: "insideTopRight",
-                    fill: "#f59e0b",
-                    fontSize: 10,
-                    fontWeight: 600,
-                  }}
+                  label={{ value: "Today", position: "insideTopRight", fill: "#f59e0b", fontSize: 10, fontWeight: 600 }}
                 />
               )}
 
-              {/* Month boundary markers (skip year boundaries) */}
+              {/* Month lines */}
               {monthTicks.filter((x) => !yearXSet.has(x)).map((x) => (
-                <ReferenceLine
-                  key={x}
-                  x={x}
-                  stroke="#334155"
-                  strokeWidth={1}
-                  strokeDasharray="3 4"
-                />
+                <ReferenceLine key={x} x={x} stroke="#334155" strokeWidth={1} strokeDasharray="3 4" />
               ))}
 
-              {/* Year boundary markers */}
+              {/* Year lines */}
               {yearMarks.map(({ year, x }) => (
                 <ReferenceLine
-                  key={year}
-                  x={x}
-                  stroke="#475569"
-                  strokeWidth={1}
-                  strokeDasharray="3 5"
-                  label={{
-                    value: String(year),
-                    position: "insideTopLeft",
-                    fill: "#64748b",
-                    fontSize: 11,
-                    fontWeight: 700,
-                  }}
+                  key={year} x={x}
+                  stroke="#475569" strokeWidth={1} strokeDasharray="3 5"
+                  label={{ value: String(year), position: "insideTopLeft", fill: "#64748b", fontSize: 11, fontWeight: 700 }}
                 />
               ))}
 
+              {/* Row track background on the offset bar */}
               <Bar
-                dataKey="offset"
+                dataKey="seg_off"
                 stackId="timeline"
                 fill="transparent"
                 isAnimationActive={false}
-                barSize={12}
-              />
-              <Bar
-                dataKey="duration"
-                stackId="timeline"
-                radius={6}
+                barSize={BAR_SIZE}
                 background={{ fill: isDark ? "#1e293b" : "#e2e8f0", radius: 6 }}
-                isAnimationActive={false}
-                barSize={12}
-              >
-                {chartData.map((entry) => (
-                  <Cell key={entry.id} fill={vibeColor(entry.vibe)} fillOpacity={0.85} />
-                ))}
-              </Bar>
+              />
+
+              {/* Period and gap bars */}
+              {periodBars}
             </ComposedChart>
           </ResponsiveContainer>
         </div>
