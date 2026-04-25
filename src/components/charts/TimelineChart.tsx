@@ -93,15 +93,19 @@ function CustomYTick({
   nameToIdMap: Map<string, string>;
   onNavigate: (id: string) => void;
 }) {
+  const [hovered, setHovered] = useState(false);
   const name = payload?.value ?? "";
   const isRed = redMap.get(name) ?? false;
   const hasFlag = flagMap.get(name) ?? false;
   const id = nameToIdMap.get(name);
-  const textColor = isRed ? "#f87171" : isDark ? "#e2e8f0" : "#0f172a";
+  const defaultColor = isDark ? "#e2e8f0" : "#0f172a";
+  const textColor = isRed ? "#f87171" : (hovered && id) ? "#3b82f6" : defaultColor;
   return (
     <g
       transform={`translate(${x},${y})`}
       onClick={id ? () => onNavigate(id) : undefined}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{ cursor: id ? "pointer" : "default" }}
     >
       <text
@@ -111,7 +115,6 @@ function CustomYTick({
         fill={textColor}
         fontSize={13}
         fontWeight={600}
-        textDecoration={id ? "underline" : undefined}
       >
         {name}
       </text>
