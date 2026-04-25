@@ -15,7 +15,7 @@ import {
 import type { TimelineEntry, TimelinePeriod } from "@/types";
 import { vibeColor, vibeEmoji, vibeLabel } from "@/lib/utils";
 
-const LABEL_WIDTH = 82;
+const LABEL_WIDTH = 155;
 const MARGIN_TOP = 8;
 const MARGIN_BOTTOM = 32;
 const ROW_HEIGHT = 36;
